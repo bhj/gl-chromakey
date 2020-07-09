@@ -51,7 +51,7 @@ API
 `.addChromaKey(keys, channel)`: add one or more chroma key configurations. returns array of key id's, in case you want to remove them later
 
 - keys = array or single of key parameters, any of the following formats:
-	- string: 'pre' = pre-computed alpha channel, defaults to 
+	- string: 'pre' = pre-computed alpha channel, defaults to
 	- string: 'blue' or 'green' color preset
 	- array of 3 numbers: RGB color
 	- object: params for color/pre-rendered key
@@ -76,15 +76,12 @@ API
 - fuzzy (optional) = float >= 1.0, multiple of threshold as outer limit of feathering
 
 
-`.go(frameRate, play)`: Start a draw loop that updates and paints keyed image to canvas for every frame  
+`.go(frameRate)`: Start a draw loop that updates and paints keyed image to canvas for every frame  
 
 - frameRate (optional) = frames per second
-- play (optional) = true/false, should we start playing the video
 
 
 `.stop(pause)`: Stop draw loop  
-
-- pause (optional) = true/false, should we pause the video
 
 
 `.refresh(clear, noThrottle)`: Update frame from video and paint to canvas  

@@ -619,7 +619,7 @@ ChromaGL.prototype.target = function (target) {
   return this
 }
 
-ChromaGL.prototype.go = function (frameRate, play) {
+ChromaGL.prototype.go = function (frameRate) {
   frameRate = frameRate || 25
   this._frameRate = frameRate
 
@@ -632,22 +632,14 @@ ChromaGL.prototype.go = function (frameRate, play) {
     obj.refresh(true)
   }, 1000 / frameRate)
 
-  if (play && this._media && checkType(this._media.play, 'Function')) {
-    this._media.play()
-  }
-
   return this
 }
 
-ChromaGL.prototype.stop = function (pause) {
+ChromaGL.prototype.stop = function () {
   if (this._interval) {
     clearInterval(this._interval)
   }
   this._interval = false
-
-  if (pause && this._media && checkType(this._media.pause, 'Function')) {
-    this._media.pause()
-  }
 }
 
 ChromaGL.prototype.refresh = function (clear, noThrottle) {
