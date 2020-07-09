@@ -144,7 +144,7 @@ const fragmentShaderPaint = `
 `
 
 function checkType (object, type) {
-  return Object.prototype.toString.call(object) === '[object ' + type + ']'
+  return Object.prototype.toString.call(object) === `[object ${type}]`
 }
 
 function fail (msg) {
@@ -155,7 +155,7 @@ function fail (msg) {
   }
 }
 
-var nodeData = {
+const nodeData = {
   video : {
     ready: 'readyState',
     //      readyTarget: 2,
@@ -177,15 +177,15 @@ var nodeData = {
   }
 }
 
-var colors = {
+const colors = {
   green: [0, 255, 0],
   blue: [50, 70, 135]
 }
 
 function buildWebGlBuffers () {
   // todo: change this to line_strip or fan for speed?
-  var gl = this._context
-  var vertexPositionBuffer = gl.createBuffer()
+  const gl = this._context
+  const vertexPositionBuffer = gl.createBuffer()
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
     -1, -1, 0,
@@ -196,7 +196,7 @@ function buildWebGlBuffers () {
   vertexPositionBuffer.itemSize = 3
   vertexPositionBuffer.numItems = 4
 
-  var texCoordBuffer = gl.createBuffer()
+  const texCoordBuffer = gl.createBuffer()
   gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
     0, 1,
@@ -207,10 +207,10 @@ function buildWebGlBuffers () {
   texCoordBuffer.itemSize = 2
   texCoordBuffer.numItems = 4
 
-  var vertexIndexBuffer = gl.createBuffer()
+  const vertexIndexBuffer = gl.createBuffer()
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer)
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([
-  0, 2, 1, 0, 3, 2 // Front face
+    0, 2, 1, 0, 3, 2 // Front face
   ]), gl.STATIC_DRAW)
   vertexIndexBuffer.itemSize = 1
   vertexIndexBuffer.numItems = 6
@@ -221,37 +221,33 @@ function buildWebGlBuffers () {
 }
 
 function setUpShaders () {
-  var gl = this._context
+  const gl = this._context
 
-  var i; var key; var keyFunctions = ''
-  var hasPreCalc = false
+  let i; let key; let keyFunctions = ''
+  let hasPreCalc = false
   for (i in this._keys) {
     if (this._keys.hasOwnProperty(i)) {
       key = this._keys[i]
       if (key.mode === 'chroma') {
-        var r = key.color[0]
-        var g = key.color[1]
-        var b = key.color[2]
+        const r = key.color[0]
+        const g = key.color[1]
+        const b = key.color[2]
 
-        var fuzzy = key.fuzzy
+        let fuzzy = key.fuzzy
         if (Math.floor(fuzzy) === fuzzy) {
           fuzzy += '.0'
         }
 
-        var thresh = key.threshold * key.threshold
+        let thresh = key.threshold * key.threshold
         if (Math.floor(thresh) === thresh) {
           thresh += '.0'
         }
 
         // convert target color to YUV
-        keyFunctions += 'pixel = distAlpha(' + key.channel + ', vec3(' +
-(0.2126 * r + 0.7152 * g + 0.0722 * b) + ',' +
-(-0.2126 * r + -0.7152 * g + 0.9278 * b) + ',' +
-(0.7874 * r + -0.7152 * g + 0.0722 * b) +
-'), ' + thresh + ', ' + fuzzy + ', pixel);\n'
+        keyFunctions += `pixel = distAlpha(${key.channel}, vec3(${0.2126 * r + 0.7152 * g + 0.0722 * b},${-0.2126 * r + -0.7152 * g + 0.9278 * b},${0.7874 * r + -0.7152 * g + 0.0722 * b}), ${thresh}, ${fuzzy}, pixel);\n`
       } else {
         hasPreCalc = true
-        keyFunctions += 'pixel = preAlpha(' + key.source + ',' + key.channel + ', pixel);\n'
+        keyFunctions += `pixel = preAlpha(${key.source},${key.channel}, pixel);\n`
       }
     }
   }
@@ -260,28 +256,28 @@ function setUpShaders () {
     keyFunctions = 'pixel = sourcePixel;\n'
   }
 
-  var fragmentSrc = fragmentShaderAlpha.replace('%keys%', keyFunctions)
+  let fragmentSrc = fragmentShaderAlpha.replace('%keys%', keyFunctions)
   if (hasPreCalc) {
-    fragmentSrc = '#define pre\n' + fragmentSrc
+    fragmentSrc = `#define pre\n${fragmentSrc}`
   }
   this.alphaShader = new ShaderProgram(gl, vertexShader, fragmentSrc)
 
-  var sourceX = this.sourceX
-  var sourceY = this.sourceY
-  var sourceWidth = this.sourceWidth
-  var sourceHeight = this.sourceHeight
+  const sourceX = this.sourceX
+  const sourceY = this.sourceY
+  const sourceWidth = this.sourceWidth
+  const sourceHeight = this.sourceHeight
 
-  var alphaX = this.alphaX
-  var alphaY = this.alphaY
-  var alphaWidth = this.alphaWidth
-  var alphaHeight = this.alphaHeight
+  const alphaX = this.alphaX
+  const alphaY = this.alphaY
+  const alphaWidth = this.alphaWidth
+  const alphaHeight = this.alphaHeight
 
   this.alphaShader.set_sourceArea(sourceX, sourceY, sourceWidth, sourceHeight)
   this.alphaShader.set_alphaArea(alphaX, alphaY, alphaWidth, alphaHeight)
 
-  var painterSrc = fragmentShaderPaint
+  let painterSrc = fragmentShaderPaint
   if (hasPreCalc) {
-    painterSrc = '#define pre\n' + painterSrc
+    painterSrc = `#define pre\n${painterSrc}`
   }
   this.paintShader = new ShaderProgram(gl, vertexShader, painterSrc)
   this.paintShader.set_sourceArea(sourceX, sourceY, sourceWidth, sourceHeight)
@@ -289,11 +285,11 @@ function setUpShaders () {
 }
 
 function initializeTextures () {
-  var gl = this._context
+  const gl = this._context
 
   // this assumes media has been loaded
   function loadTexture (media) {
-    var texture = gl.createTexture()
+    const texture = gl.createTexture()
 
     texture.image = media
 
@@ -315,7 +311,7 @@ function initializeTextures () {
 }
 
 function refreshVideoTexture (texture) {
-  var gl = this._context
+  const gl = this._context
 
   gl.bindTexture(gl.TEXTURE_2D, texture)
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image)
@@ -324,15 +320,15 @@ function refreshVideoTexture (texture) {
 
 function initializeFrameBuffer (width, height, format) {
   // set up frame buffer
-  var gl = this._context
-  var fmt = format || gl.UNSIGNED_BYTE
-  var obj = {}
-  var tex
+  const gl = this._context
+  const fmt = format || gl.UNSIGNED_BYTE
+  const obj = {}
+  let tex
 
-  var frameBuffer = gl.createFramebuffer()
+  const frameBuffer = gl.createFramebuffer()
   gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer)
 
-  var texture = gl.createTexture()
+  const texture = gl.createTexture()
   gl.bindTexture(gl.TEXTURE_2D, texture)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
@@ -357,7 +353,7 @@ function initializeFrameBuffer (width, height, format) {
     }
   }
 
-  var renderBuffer = gl.createRenderbuffer()
+  const renderBuffer = gl.createRenderbuffer()
   gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer)
   gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height)
 
@@ -371,7 +367,7 @@ function initializeFrameBuffer (width, height, format) {
   if (!gl.isFramebuffer(frameBuffer)) {
     throw ('Invalid framebuffer')
   }
-  var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER)
+  const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER)
   switch (status) {
     case gl.FRAMEBUFFER_COMPLETE:
       break
@@ -384,7 +380,7 @@ function initializeFrameBuffer (width, height, format) {
     case gl.FRAMEBUFFER_UNSUPPORTED:
       throw ('Incomplete framebuffer: FRAMEBUFFER_UNSUPPORTED')
     default:
-      throw ('Incomplete framebuffer: ' + status)
+      throw (`Incomplete framebuffer: ${status}`)
   }
 
   obj.frameBuffer = frameBuffer
@@ -395,7 +391,7 @@ function initializeFrameBuffer (width, height, format) {
 }
 
 function drawScreen (shader, sourceTexture, alphaTexture, channel) {
-  var gl = this._context
+  const gl = this._context
   shader.useProgram()
 
   /* todo: do this all only once at the beginning, since we only have one model */
@@ -457,9 +453,9 @@ function drawScreen (shader, sourceTexture, alphaTexture, channel) {
 
   // draw!
   gl.drawElements(gl.TRIANGLES, this._vertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0)
-  var err = gl.getError()
+  const err = gl.getError()
   if (err) {
-    console.log('draw error: ' + err)
+    console.log(`draw error: ${err}`)
   }
 
   // disable this again, in case someone else is using the same context
@@ -483,20 +479,20 @@ this._media[this._data.ready] === this._data.readyTarget ||
       callback()
     }
   } else {
-    var obj = this
+    const obj = this
     /*
 this._media.addEventListener( this._data.load , function() {
 checkReady.apply(obj, callback);
 }, false);
 */
-    setTimeout(function () {
+    setTimeout(() => {
       checkReady.apply(obj, callback)
     }, 0)
   }
 }
 
 function setUpWebGl () {
-  var gl = this._context
+  const gl = this._context
 
   gl.viewportWidth = gl.canvas.width
   gl.viewportHeight = gl.canvas.height
@@ -510,429 +506,438 @@ function setUpWebGl () {
   setUpShaders.apply(this)
 }
 
-function ChromaGL (source, target, options) {
-  var opts = options || {}
+class ChromaGL {
+  constructor (source, target, options) {
+    const opts = options || {}
 
-  this.errorCallback = opts.errorCallback
+    this.errorCallback = opts.errorCallback
 
-  if (!this.hasWebGL()) {
-    fail.apply(this, 'Browser does not support WebGL')
-    return
-  }
-
-  if (!this.source(source || false)) {
-    return false
-  }
-
-  if (!this.target(target || false)) {
-    return false
-  }
-
-  // todo: put this in a method
-  var clip = opts.clip || {}
-  this.clipX = clip.x || 0
-  this.clipY = clip.y || 0
-  this.clipWidth = clip.width || 1 - this.clipX
-  this.clipHeight = clip.height || 1 - this.clipY
-  this.clipping = (this.clipX || this.clipY || this.clipWidth < 1 || this.clipHeight < 1)
-
-  // todo: scale (x and y) option?
-
-  // todo: put this in a method
-  var sourceDimensions = opts.source || {}
-  this.sourceX = sourceDimensions.x || 0
-  this.sourceY = sourceDimensions.x || 0
-  this.sourceWidth = sourceDimensions.width || 1 - this.sourceX
-  this.sourceHeight = sourceDimensions.height || (0.5 - this.sourceY)
-  var alpha = opts.alpha || {}
-  this.alphaX = alpha.x || 0
-  this.alphaY = alpha.y !== undefined ? alpha.y : this.sourceHeight
-  this.alphaWidth = alpha.width !== undefined ? alpha.width : 1 - this.alphaX
-  this.alphaHeight = alpha.height !== undefined ? alpha.height : (1 - this.alphaY)
-
-  buildWebGlBuffers.apply(this)
-
-  this._keys = {}
-
-  this.initialized = true
-  this.dirty = true
-  checkReady.call(this)
-}
-
-ChromaGL.prototype.hasWebGL = function () {
-  return !!window.WebGLRenderingContext
-}
-
-ChromaGL.prototype.source = function (source) {
-  if (!source || !source.tagName) {
-    fail.apply(this, 'Missing source element')
-    return false
-  }
-
-  this._data = nodeData[source.tagName.toLowerCase()]
-
-  if (!this._data) {
-    fail.apply(this, 'Unsupported source media type')
-    return false
-  }
-
-  this._media = source
-  this.dirty = true
-
-  checkReady.call(this)
-
-  return this
-}
-
-ChromaGL.prototype.target = function (target) {
-  if (target === undefined) {
-    return this._target
-  }
-
-  let context, element
-
-  if (checkType(target, 'WebGLRenderingContext')) {
-    context = target
-    element = target.canvas
-  } else if (target.tagName) {
-    element = target
-  }
-
-  if (!element) {
-    fail.apply(this, 'Missing target element')
-    return false
-  }
-
-  if (element && !checkType(element, 'HTMLCanvasElement')) {
-    fail.apply(this, 'Target must be a canvas or context')
-    return false
-  }
-
-  // set up WebGL context
-  context = element.getContext('webgl')
-  this._context = context
-  this._target = context
-  this.dirty = true
-
-  setUpWebGl.apply(this)
-
-  return this
-}
-
-ChromaGL.prototype.go = function (frameRate) {
-  frameRate = frameRate || 25
-  this._frameRate = frameRate
-
-  if (this._interval) {
-    clearInterval(this._interval)
-  }
-
-  var obj = this
-  this._interval = setInterval(function () {
-    obj.refresh(true)
-  }, 1000 / frameRate)
-
-  return this
-}
-
-ChromaGL.prototype.stop = function () {
-  if (this._interval) {
-    clearInterval(this._interval)
-  }
-  this._interval = false
-}
-
-ChromaGL.prototype.refresh = function (clear, noThrottle) {
-  if (this._mediaTexture && this._mediaTexture.image && this._media[this._data.ready]) { // && this._mediaTexture.image instanceof HTMLVideoElement) { //todo: use checkType?
-    var image = this._mediaTexture.image
-    if (image.lastUpdateFrame !== image.currentTime || image.currentTime === undefined) { // todo: do this better
-      if (image.currentTime === undefined) {
-        image.currentTime = 0
-      }
-      image.lastUpdateFrame = image.currentTime
-      refreshVideoTexture.call(this, this._mediaTexture)
-      this.dirty = true
+    if (!this.hasWebGL()) {
+      fail.apply(this, 'Browser does not support WebGL')
+      return
     }
-  }
 
-  if (this.dirty || noThrottle) {
-    if (clear) {
-      this._context.clearColor(0.0, 0.0, 0.0, 0.0)
-      this._context.clear(this._context.COLOR_BUFFER_BIT)
+    if (!this.source(source || false)) {
+      return false
     }
-    this.paint()
-  }
-}
 
-ChromaGL.prototype.paint = function () {
-  if (this.alphaShader && this._media[this._data.ready]) {
-    var gl = this._context
+    if (!this.target(target || false)) {
+      return false
+    }
 
-    // draw alpha channels to frame buffer
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.alphaFrameBuffer.frameBuffer)
-    gl.clear(gl.COLOR_BUFFER_BIT)
-    drawScreen.call(this, this.alphaShader, this._mediaTexture, null)
-    this.dirty = false
+    // todo: put this in a method
+    const clip = opts.clip || {}
+    this.clipX = clip.x || 0
+    this.clipY = clip.y || 0
+    this.clipWidth = clip.width || 1 - this.clipX
+    this.clipHeight = clip.height || 1 - this.clipY
+    this.clipping = (this.clipX || this.clipY || this.clipWidth < 1 || this.clipHeight < 1)
 
-    // draw to canvas
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    drawScreen.call(this, this.paintShader, this._mediaTexture, this.alphaFrameBuffer.texture)
-    this.dirty = false
-  }
-}
+    // todo: scale (x and y) option?
 
-ChromaGL.prototype.setThreshold = function (id, threshold, fuzzy) {
-  if (this._keys[id] && this._keys[id].mode === 'chroma') {
-    this._keys[id].threshold = isNaN(threshold) ? 94.86832980505137 : parseFloat(threshold)
+    // todo: put this in a method
+    const sourceDimensions = opts.source || {}
+    this.sourceX = sourceDimensions.x || 0
+    this.sourceY = sourceDimensions.x || 0
+    this.sourceWidth = sourceDimensions.width || 1 - this.sourceX
+    this.sourceHeight = sourceDimensions.height || (0.5 - this.sourceY)
+    const alpha = opts.alpha || {}
+    this.alphaX = alpha.x || 0
+    this.alphaY = alpha.y !== undefined ? alpha.y : this.sourceHeight
+    this.alphaWidth = alpha.width !== undefined ? alpha.width : 1 - this.alphaX
+    this.alphaHeight = alpha.height !== undefined ? alpha.height : (1 - this.alphaY)
 
-    this._keys[id].fuzzy = isNaN(fuzzy) ? (isNaN(threshold) ? 1.25 : this._keys[id].fuzzy) : parseFloat(fuzzy)
+    buildWebGlBuffers.apply(this)
 
-    setUpShaders.apply(this)
+    this._keys = {}
+
+    this.initialized = true
     this.dirty = true
-    // this.paint();
-  }
-  return this
-}
-
-ChromaGL.prototype.addChromaKey = function (keys, channel) {
-  var ids = []
-  var id
-
-  // todo: allow static image/canvas as mask
-  // todo: luminance key
-  // todo: alternate color spaces
-
-  if (!checkType(keys, 'Array') || (keys.length && !isNaN(keys[0]))) {
-    keys = [keys]
+    checkReady.call(this)
   }
 
-  channel = channel || 0
+  hasWebGL () {
+    return !!window.WebGLRenderingContext
+  }
 
-  var i, key
-  for (i = 0; i < keys.length; i++) {
-    key = keys[i]
-    id = keyCount
-    keyCount++
+  source (source) {
+    if (!source || !source.tagName) {
+      fail.apply(this, 'Missing source element')
+      return false
+    }
 
-    if (checkType(key, 'Array')) {
-      if (key.length !== 3) {
-        fail.apply(this, 'Unsupported chroma key type')
-        return false
+    this._data = nodeData[source.tagName.toLowerCase()]
+
+    if (!this._data) {
+      fail.apply(this, 'Unsupported source media type')
+      return false
+    }
+
+    this._media = source
+    this.dirty = true
+
+    checkReady.call(this)
+
+    return this
+  }
+
+  target (target) {
+    if (target === undefined) {
+      return this._target
+    }
+
+    let context
+    let element
+
+    if (checkType(target, 'WebGLRenderingContext')) {
+      context = target
+      element = target.canvas
+    } else if (target.tagName) {
+      element = target
+    }
+
+    if (!element) {
+      fail.apply(this, 'Missing target element')
+      return false
+    }
+
+    if (element && !checkType(element, 'HTMLCanvasElement')) {
+      fail.apply(this, 'Target must be a canvas or context')
+      return false
+    }
+
+    // set up WebGL context
+    context = element.getContext('webgl')
+    this._context = context
+    this._target = context
+    this.dirty = true
+
+    setUpWebGl.apply(this)
+
+    return this
+  }
+
+  go (frameRate = 25) {
+    this._frameRate = frameRate
+
+    if (this._interval) {
+      clearInterval(this._interval)
+    }
+
+    const obj = this
+    this._interval = setInterval(() => {
+      obj.refresh(true)
+    }, 1000 / frameRate)
+
+    return this
+  }
+
+  stop () {
+    if (this._interval) {
+      clearInterval(this._interval)
+    }
+    this._interval = false
+  }
+
+  refresh (clear, noThrottle) {
+    if (this._mediaTexture && this._mediaTexture.image && this._media[this._data.ready]) { // && this._mediaTexture.image instanceof HTMLVideoElement) { //todo: use checkType?
+      const image = this._mediaTexture.image
+      if (image.lastUpdateFrame !== image.currentTime || image.currentTime === undefined) { // todo: do this better
+        if (image.currentTime === undefined) {
+          image.currentTime = 0
+        }
+        image.lastUpdateFrame = image.currentTime
+        refreshVideoTexture.call(this, this._mediaTexture)
+        this.dirty = true
       }
-      var j
-      for (j = 0; j < 3; j++) {
-        if (isNaN(key[j])) {
+    }
+
+    if (this.dirty || noThrottle) {
+      if (clear) {
+        this._context.clearColor(0.0, 0.0, 0.0, 0.0)
+        this._context.clear(this._context.COLOR_BUFFER_BIT)
+      }
+      this.paint()
+    }
+  }
+
+  paint () {
+    if (this.alphaShader && this._media[this._data.ready]) {
+      const gl = this._context
+
+      // draw alpha channels to frame buffer
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.alphaFrameBuffer.frameBuffer)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      drawScreen.call(this, this.alphaShader, this._mediaTexture, null)
+      this.dirty = false
+
+      // draw to canvas
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      drawScreen.call(this, this.paintShader, this._mediaTexture, this.alphaFrameBuffer.texture)
+      this.dirty = false
+    }
+  }
+
+  setThreshold (id, threshold, fuzzy) {
+    if (this._keys[id] && this._keys[id].mode === 'chroma') {
+      this._keys[id].threshold = isNaN(threshold) ? 94.86832980505137 : parseFloat(threshold)
+
+      this._keys[id].fuzzy = isNaN(fuzzy) ? (isNaN(threshold) ? 1.25 : this._keys[id].fuzzy) : parseFloat(fuzzy)
+
+      setUpShaders.apply(this)
+      this.dirty = true
+      // this.paint();
+    }
+    return this
+  }
+
+  addChromaKey (keys, channel) {
+    const ids = []
+    let id
+
+    // todo: allow static image/canvas as mask
+    // todo: luminance key
+    // todo: alternate color spaces
+
+    if (!checkType(keys, 'Array') || (keys.length && !isNaN(keys[0]))) {
+      keys = [keys]
+    }
+
+    channel = channel || 0
+
+    let i
+    let key
+    for (i = 0; i < keys.length; i++) {
+      key = keys[i]
+      id = keyCount
+      keyCount++
+
+      if (checkType(key, 'Array')) {
+        if (key.length !== 3) {
           fail.apply(this, 'Unsupported chroma key type')
           return false
         }
-      }
-      key = {
-        mode: 'chroma',
-        color: key,
-        channel: channel
-      }
-    } else if (checkType(key, 'String')) {
-      if (key === 'pre') {
-        key = {
-          mode: 'pre',
-          channel: channel
+        let j
+        for (j = 0; j < 3; j++) {
+          if (isNaN(key[j])) {
+            fail.apply(this, 'Unsupported chroma key type')
+            return false
+          }
         }
-      } else if (colors[key]) {
         key = {
           mode: 'chroma',
-          color: colors[key],
-          channel: channel
+          color: key,
+          channel
         }
-      } else {
-        fail.apply(this, 'Unknown chroma type')
+      } else if (checkType(key, 'String')) {
+        if (key === 'pre') {
+          key = {
+            mode: 'pre',
+            channel
+          }
+        } else if (colors[key]) {
+          key = {
+            mode: 'chroma',
+            color: colors[key],
+            channel
+          }
+        } else {
+          fail.apply(this, 'Unknown chroma type')
+          return false
+        }
+      }
+
+      if (!checkType(key, 'Object')) {
+        fail.apply(this, 'Unsupported chroma key type')
         return false
+      }
+
+      if (key.channel === undefined) {
+        key.channel = channel
+      }
+      if (isNaN(key.channel) || key.channel < 0 || key.channel > 2) {
+        fail.apply(this, 'Unsupported channel')
+      }
+
+      if (key.mode === 'chroma') {
+        if (key.color) {
+          key.threshold = key.threshold || 94.86832980505137
+          key.fuzzy = key.fuzzy || 1.25
+        } else {
+          fail.apply(this, 'Missing chroma color')
+          return false
+        }
+      } else if (key.mode === 'pre') {
+        key.source = key.source || 0
+      } else {
+        fail.apply(this, 'Unsupported chroma key type')
+        return false
+      }
+
+      const clip = key.clip || {}
+      key.clipX = clip.x || 0
+      key.clipY = clip.y || 0
+      key.clipWidth = clip.width || this._media[this._data.width] - this.clipX
+      key.clipHeight = clip.height || this._media[this._data.height] - this.clipY
+
+      ids.push(id)
+      this._keys[id] = key
+    }
+
+    setUpShaders.apply(this)
+    this.dirty = true
+    this.refresh()
+    return ids
+  }
+
+  removeChromaKey (id) {
+    let ids
+    if (checkType(id, 'Array')) {
+      ids = id
+    } else {
+      ids = [id]
+    }
+
+    let i
+    let theId
+    for (i = 0; i < ids.length; i++) {
+      theId = ids[i]
+      if (!isNaN(theId) && this._key.hasOwnProperty(theId)) {
+        delete this._key[theId]
       }
     }
 
-    if (!checkType(key, 'Object')) {
-      fail.apply(this, 'Unsupported chroma key type')
-      return false
-    }
+    setUpShaders.apply(this)
+    this.dirty = true
+  }
+}
 
-    if (key.channel === undefined) {
-      key.channel = channel
-    }
-    if (isNaN(key.channel) || key.channel < 0 || key.channel > 2) {
-      fail.apply(this, 'Unsupported channel')
-    }
+class ShaderProgram {
+  constructor (gl, vertexShaderSource, fragmentShaderSource) {
+    this.gl = gl
 
-    if (key.mode === 'chroma') {
-      if (key.color) {
-        key.threshold = key.threshold || 94.86832980505137
-        key.fuzzy = key.fuzzy || 1.25
+    function compileShader (source, fragment) {
+      let shader
+      if (fragment) {
+        shader = gl.createShader(gl.FRAGMENT_SHADER)
       } else {
-        fail.apply(this, 'Missing chroma color')
-        return false
+        shader = gl.createShader(gl.VERTEX_SHADER)
       }
-    } else if (key.mode === 'pre') {
-      key.source = key.source || 0
-    } else {
-      fail.apply(this, 'Unsupported chroma key type')
-      return false
+
+      gl.shaderSource(shader, source)
+      gl.compileShader(shader)
+
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        throw `Shader error: ${gl.getShaderInfoLog(shader)}`
+      }
+
+      return shader
     }
 
-    var clip = key.clip || {}
-    key.clipX = clip.x || 0
-    key.clipY = clip.y || 0
-    key.clipWidth = clip.width || this._media[this._data.width] - this.clipX
-    key.clipHeight = clip.height || this._media[this._data.height] - this.clipY
+    const vertexShader = compileShader(vertexShaderSource)
+    const fragmentShader = compileShader(fragmentShaderSource, true)
 
-    ids.push(id)
-    this._keys[id] = key
-  }
+    let err = ''
+    const program = gl.createProgram()
+    gl.attachShader(program, vertexShader)
+    let err2 = gl.getShaderInfoLog(vertexShader)
+    if (err2) {
+      err += `Vertex shader error: ${err2}\n`
+    }
+    gl.attachShader(program, fragmentShader)
+    err2 = gl.getShaderInfoLog(fragmentShader)
+    if (err2) {
+      err += `Fragment shader error: ${err2}\n`
+    }
+    gl.linkProgram(program)
 
-  setUpShaders.apply(this)
-  this.dirty = true
-  this.refresh()
-  return ids
-}
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      err += gl.getProgramInfoLog(program)
+      gl.deleteProgram(program)
+      gl.deleteShader(vertexShader)
+      gl.deleteShader(fragmentShader)
+      throw `Could not initialise shader: ${err}`
+    }
 
-ChromaGL.prototype.removeChromaKey = function (id) {
-  var ids
-  if (checkType(id, 'Array')) {
-    ids = id
-  } else {
-    ids = [id]
-  }
+    this.program = program
 
-  var i, theId
-  for (i = 0; i < ids.length; i++) {
-    theId = ids[i]
-    if (!isNaN(theId) && this._key.hasOwnProperty(theId)) {
-      delete this._key[theId]
+    gl.useProgram(program)
+    const num_uniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS)
+    this.uniforms = []
+    let i
+    let info
+    let name
+    let loc
+    for (i = 0; i < num_uniforms; ++i) {
+      info = gl.getActiveUniform(program, i)
+      name = info.name
+      loc = gl.getUniformLocation(program, name)
+      loc.name = name
+      info.set = this[`set_${name}`] = makeShaderSetter.call(this, info, loc)
+      info.get = this[`get_${name}`] = makeShaderGetter.call(this, loc)
+      info.loc = this[`location_${name}`] = loc
+      this.uniforms.push(info)
+    }
+
+    const num_attribs = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES)
+    this.attributes = []
+    for (i = 0; i < num_attribs; ++i) {
+      info = gl.getActiveAttrib(program, i)
+      name = info.name
+      loc = gl.getAttribLocation(program, name)
+      this[`location_${name}`] = loc
+      this.attributes.push(name)
     }
   }
 
-  setUpShaders.apply(this)
-  this.dirty = true
-}
-
-function ShaderProgram (gl, vertexShaderSource, fragmentShaderSource) {
-  this.gl = gl
-
-  function compileShader (source, fragment) {
-    var shader
-    if (fragment) {
-      shader = gl.createShader(gl.FRAGMENT_SHADER)
-    } else {
-      shader = gl.createShader(gl.VERTEX_SHADER)
-    }
-
-    gl.shaderSource(shader, source)
-    gl.compileShader(shader)
-
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      throw 'Shader error: ' + gl.getShaderInfoLog(shader)
-    }
-
-    return shader
+  useProgram () {
+    this.gl.useProgram(this.program)
   }
-
-  var vertexShader = compileShader(vertexShaderSource)
-  var fragmentShader = compileShader(fragmentShaderSource, true)
-
-  var err = ''
-  var program = gl.createProgram()
-  gl.attachShader(program, vertexShader)
-  var err2 = gl.getShaderInfoLog(vertexShader)
-  if (err2) {
-    err += 'Vertex shader error: ' + err2 + '\n'
-  }
-  gl.attachShader(program, fragmentShader)
-  err2 = gl.getShaderInfoLog(fragmentShader)
-  if (err2) {
-    err += 'Fragment shader error: ' + err2 + '\n'
-  }
-  gl.linkProgram(program)
-
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    err += gl.getProgramInfoLog(program)
-    gl.deleteProgram(program)
-    gl.deleteShader(vertexShader)
-    gl.deleteShader(fragmentShader)
-    throw 'Could not initialise shader: ' + err
-  }
-
-  this.program = program
-
-  gl.useProgram(program)
-  var num_uniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS)
-  this.uniforms = []
-  var i, info, name, loc
-  for (i = 0; i < num_uniforms; ++i) {
-    info = gl.getActiveUniform(program, i)
-    name = info.name
-    loc = gl.getUniformLocation(program, name)
-    loc.name = name
-    info.set = this['set_' + name] = makeShaderSetter.call(this, info, loc)
-    info.get = this['get_' + name] = makeShaderGetter.call(this, loc)
-    info.loc = this['location_' + name] = loc
-    this.uniforms.push(info)
-  }
-
-  var num_attribs = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES)
-  this.attributes = []
-  for (i = 0; i < num_attribs; ++i) {
-    info = gl.getActiveAttrib(program, i)
-    name = info.name
-    loc = gl.getAttribLocation(program, name)
-    this['location_' + name] = loc
-    this.attributes.push(name)
-  }
-}
-
-ShaderProgram.prototype.useProgram = function () {
-  this.gl.useProgram(this.program)
 }
 
 function makeShaderSetter (info, loc) {
-  var gl = this.gl
+  const gl = this.gl
   switch (info.type) {
     case gl.SAMPLER_2D:
-      return function (value) {
-        info.glTexture = gl['TEXTURE' + value]
+      return value => {
+        info.glTexture = gl[`TEXTURE${value}`]
         gl.uniform1i(loc, value)
       }
     case gl.BOOL:
     case gl.INT:
-      return function (value) {
+      return value => {
         gl.uniform1i(loc, value)
       }
     case gl.FLOAT:
-      return function (value) {
+      return value => {
         gl.uniform1f(loc, value)
       }
     case gl.FLOAT_VEC2:
-      return function (x, y) {
+      return (x, y) => {
         gl.uniform2f(loc, x, y)
       }
     case gl.FLOAT_VEC3:
-      return function (x, y, z) {
+      return (x, y, z) => {
         gl.uniform3f(loc, x, y, z)
       }
     case gl.FLOAT_VEC4:
-      return function (x, y, z, w) {
+      return (x, y, z, w) => {
         gl.uniform4f(loc, x, y, z, w)
       }
     case gl.FLOAT_MAT3:
-      return function (mat3) {
+      return mat3 => {
         gl.uniformMatrix3fv(loc, false, mat3)
       }
     case gl.FLOAT_MAT4:
-      return function (mat4) {
+      return mat4 => {
         gl.uniformMatrix4fv(loc, false, mat4)
       }
     default:
       break
   }
 
-  return function () {
-    throw "ShaderProgram doesn't know how to set type: " + info.type
+  return () => {
+    throw `ShaderProgram doesn't know how to set type: ${info.type}`
   }
 }
 
@@ -942,4 +947,4 @@ function makeShaderGetter (loc) {
   }
 }
 
-module.exports = ChromaGL
+export default ChromaGL
