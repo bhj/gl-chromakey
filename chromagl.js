@@ -722,16 +722,6 @@
       obj.refresh(true)
     }, 1000 / frameRate)
 
-    /*
-  Weird bug in video driver on MacBook causes errors if you leave the page alone for a while and come back.  This might get around it.
-
-  Create a wrapper around paint function. In case someone else sets the same focus event to the same .paint() method, we don't want to remove their event when we .stop() later
-  */
-    this._focusListener = function () {
-      obj.paint()
-    }
-    window.addEventListener('focus', this._focusListener, false)
-
     if (play && this._media && checkType(this._media.play, 'Function')) {
       this._media.play()
     }
@@ -748,11 +738,6 @@
     if (pause && this._media && checkType(this._media.pause, 'Function')) {
       this._media.pause()
     }
-
-    if (this._focusListener) {
-      window.removeEventListener('focus', this._focusListener, false)
-    }
-    this._focusListener = null
   }
 
   ChromaGL.prototype.refresh = function (clear, noThrottle) {
