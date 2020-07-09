@@ -27,8 +27,8 @@ API
 ---
 `ChromaGL(source, target, options)`: Object constructor
 
-- source = canvas/img/video object (or selector string)
-- target = canvas object (or selector string)
+- source = canvas/img/video object
+- target = canvas object
 - options (not required):
 	* `clip` = object containing `x`, `y`, `width` and `height` representing clipping area (all parameters are 0 to 1, as factor of full image dimensions)
 	* `alpha` = object containing `x`, `y`, `width` and `height` representing part of image containing alpha mask
@@ -40,12 +40,12 @@ API
 
 `.source(source)`: Set source containing video or image to key. Can be changed after object creation.  
 
-- source = canvas/img/video object (or tag/id string)
+- source = canvas/img/video object
 
 
 `.target(target)`: Set target canvas on which to paint keyed image. Can be changed after object creation.
 
-- target = canvas object (or tag/id string)
+- target = canvas object
 
 
 `.addChromaKey(keys, channel)`: add one or more chroma key configurations. returns array of key id's, in case you want to remove them later
@@ -86,13 +86,13 @@ API
 
 - pause (optional) = true/false, should we pause the video
 
-  
+
 `.refresh(clear, noThrottle)`: Update frame from video and paint to canvas  
 
 - clear: true/false whether to clear the canvas first
 - noThrottle: true/false. Unless true, refresh will only paint canvas if there is a new frame or chroma parameters have changed
 
-  
+
 `.paint()`: Paints current video frame to target canvas  
 
 
@@ -108,10 +108,8 @@ To Do
 -----
 * Add WebGL framebuffer/texture to acceptable source media types
 * Add WebGL framebuffer/texture as acceptable target instead of canvas
-* Currently assumes target canvas is WebGL context. Allow painting to 2d context
 * Provide more complete examples
 * implement `draw()`
-* Fall back to 2d canvas if WebGL is not supported. Will require much smaller video unless browsers change implementation of `getImageData`
 * Add method for changing clipping area
 * Allow clipping area for individual keys
 * Add method/option for scaling?

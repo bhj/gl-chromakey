@@ -516,7 +516,6 @@ function ChromaGL (source, target, options) {
   this.errorCallback = opts.errorCallback
 
   if (!this.hasWebGL()) {
-    // todo: fall back to canvas2d method, if allowed
     fail.apply(this, 'Browser does not support WebGL')
     return
   }
@@ -565,29 +564,19 @@ ChromaGL.prototype.hasWebGL = function () {
 }
 
 ChromaGL.prototype.source = function (source) {
-  if (source === undefined) {
-    return this._media
-  }
-
-  var element
-  if (checkType(source, 'String')) {
-    element = document.getElementById(source) || document.getElementsByTagName(source)[0]
-  } else if (source.tagName) {
-    element = source
-  }
-
-  if (!element) {
+  if (!source || !source.tagName) {
     fail.apply(this, 'Missing source element')
     return false
   }
 
-  this._data = nodeData[element.tagName.toLowerCase()]
+  this._data = nodeData[source.tagName.toLowerCase()]
+
   if (!this._data) {
     fail.apply(this, 'Unsupported source media type')
     return false
   }
 
-  this._media = element
+  this._media = source
   this.dirty = true
 
   checkReady.call(this)
@@ -600,28 +589,17 @@ ChromaGL.prototype.target = function (target) {
     return this._target
   }
 
-  var context
-  var element
-  var is2D = false
-  if (checkType(target, 'String')) {
-    element = document.getElementById(target) || document.getElementsByTagName(target)[0]
-  } else if (checkType(target, 'CanvasRenderingContext2D')) {
-    // target is a 2D context
+  let context, element
+
+  if (checkType(target, 'WebGLRenderingContext')) {
     context = target
     element = target.canvas
-    this._drawMode = '2d'
-    is2D = true
-  } else if (checkType(target, 'WebGLRenderingContext')) {
-    // target is a WebGL context
-    context = target
-    element = target.canvas
-    this._drawMode = 'webgl'
   } else if (target.tagName) {
     element = target
   }
 
   if (!element) {
-    fail.apply(this, 'Missing source element')
+    fail.apply(this, 'Missing target element')
     return false
   }
 
@@ -630,44 +608,9 @@ ChromaGL.prototype.target = function (target) {
     return false
   }
 
-  if (!context) {
-    // set up WebGL context
-    try {
-      context = element.getContext('experimental-webgl')
-      this._context = (context) // WebGLDebugUtils.makeDebugContext
-      this._drawMode = 'webgl'
-    } catch (e) {
-      try {
-        // future proof
-        context = element.getContext('webgl')
-        this._context = context
-        this._drawMode = 'webgl'
-      } catch (e2) {
-      }
-    }
-  }
-  if (!context || is2D) {
-    if (!context) {
-      context = element.getContext('2d')
-      this._drawMode = '2d'
-    }
-
-    // this canvas already has a 2d context, so let's create a new one
-    var canvas = document.createElement('canvas')
-    canvas.width = element.width
-    canvas.height = element.height
-    try {
-      this._context = canvas.getContext('experimental-webgl')
-    } catch (e3) {
-      try {
-        // future proof
-        this._context = canvas.getContext('webgl')
-      } catch (e4) {
-      }
-    }
-    // todo: fall back to 2d canvas if webgl is unavailable
-  }
-
+  // set up WebGL context
+  context = element.getContext('webgl')
+  this._context = context
   this._target = context
   this.dirty = true
 
