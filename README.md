@@ -76,26 +76,12 @@ API
 - fuzzy (optional) = float >= 1.0, multiple of threshold as outer limit of feathering
 
 
-`.go(frameRate)`: Start a draw loop that updates and paints keyed image to canvas for every frame  
-
-- frameRate (optional) = frames per second
-
-
-`.stop(pause)`: Stop draw loop  
-
-
-`.refresh(clear, noThrottle)`: Update frame from video and paint to canvas  
+`.render(clear)`: Updates frame from video and paints to canvas  
 
 - clear: true/false whether to clear the canvas first
-- noThrottle: true/false. Unless true, refresh will only paint canvas if there is a new frame or chroma parameters have changed
 
 
-`.paint()`: Paints current video frame to target canvas  
-
-
-`.draw(image, target, channel, invert)`:  Not implemented yet.  Will allow painting of images to canvas using partial alpha masks from different channels
-
-- invert = bool, invert alpha mask
+`.paint()`: Re-paints current frame to canvas  
 
 
 Notes
@@ -106,7 +92,6 @@ To Do
 * Add WebGL framebuffer/texture to acceptable source media types
 * Add WebGL framebuffer/texture as acceptable target instead of canvas
 * Provide more complete examples
-* implement `draw()`
 * Add method for changing clipping area
 * Allow clipping area for individual keys
 * Add method/option for scaling?

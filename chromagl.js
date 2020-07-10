@@ -337,7 +337,7 @@ this._media[this._data.ready] === this._data.readyTarget ||
 (this._data.readyTarget === undefined && this._media[this._data.ready])) {
     initializeTextures.apply(this)
     setUpShaders.apply(this)
-    this.refresh()
+    this.render()
     if (callback && checkType(callback, 'Function')) {
       callback()
     }
@@ -480,46 +480,27 @@ class ChromaGL {
     return this
   }
 
-  go (frameRate = 25) {
-    this._frameRate = frameRate
-
-    if (this._interval) {
-      clearInterval(this._interval)
-    }
-
-    const obj = this
-    this._interval = setInterval(() => {
-      obj.refresh(true)
-    }, 1000 / frameRate)
-
-    return this
-  }
-
-  stop () {
-    if (this._interval) {
-      clearInterval(this._interval)
-    }
-    this._interval = false
-  }
-
-  refresh (clear, noThrottle) {
-    if (this._mediaTexture && this._mediaTexture.image && this._media[this._data.ready]) { // && this._mediaTexture.image instanceof HTMLVideoElement) { //todo: use checkType?
+  render (clear) {
+    if (this._mediaTexture && this._mediaTexture.image && this._media[this._data.ready]) {
       const image = this._mediaTexture.image
+
       if (image.lastUpdateFrame !== image.currentTime || image.currentTime === undefined) { // todo: do this better
         if (image.currentTime === undefined) {
           image.currentTime = 0
         }
+
         image.lastUpdateFrame = image.currentTime
         refreshVideoTexture.call(this, this._mediaTexture)
         this.dirty = true
       }
     }
 
-    if (this.dirty || noThrottle) {
+    if (this.dirty) {
       if (clear) {
         this._context.clearColor(0.0, 0.0, 0.0, 0.0)
         this._context.clear(this._context.COLOR_BUFFER_BIT)
       }
+
       this.paint()
     }
   }
@@ -649,7 +630,7 @@ class ChromaGL {
 
     setUpShaders.apply(this)
     this.dirty = true
-    this.refresh()
+    this.render()
     return ids
   }
 
