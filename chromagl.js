@@ -11,7 +11,7 @@ function fail (msg) {
   if (this.errorCallback) {
     this.errorCallback(msg)
   } else {
-    throw msg
+    throw new Error(msg)
   }
 }
 
@@ -225,22 +225,22 @@ function initializeFrameBuffer (width, height, format) {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
   if (!gl.isFramebuffer(frameBuffer)) {
-    throw ('Invalid framebuffer')
+    throw new Error('Invalid framebuffer')
   }
   const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER)
   switch (status) {
     case gl.FRAMEBUFFER_COMPLETE:
       break
     case gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-      throw ('Incomplete framebuffer: FRAMEBUFFER_INCOMPLETE_ATTACHMENT')
+      throw new Error('Incomplete framebuffer: FRAMEBUFFER_INCOMPLETE_ATTACHMENT')
     case gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-      throw ('Incomplete framebuffer: FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT')
+      throw new Error('Incomplete framebuffer: FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT')
     case gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
-      throw ('Incomplete framebuffer: FRAMEBUFFER_INCOMPLETE_DIMENSIONS')
+      throw new Error('Incomplete framebuffer: FRAMEBUFFER_INCOMPLETE_DIMENSIONS')
     case gl.FRAMEBUFFER_UNSUPPORTED:
-      throw ('Incomplete framebuffer: FRAMEBUFFER_UNSUPPORTED')
+      throw new Error('Incomplete framebuffer: FRAMEBUFFER_UNSUPPORTED')
     default:
-      throw (`Incomplete framebuffer: ${status}`)
+      throw new Error(`Incomplete framebuffer: ${status}`)
   }
 
   obj.frameBuffer = frameBuffer
@@ -301,7 +301,10 @@ function drawScreen (shader, sourceTexture, alphaTexture, channel) {
   /* clipping */
   if (this.clipping) {
     gl.enable(gl.SCISSOR_TEST)
-    gl.scissor(this.clipX * gl.viewportWidth, ((1 - this.clipY - this.clipHeight) * gl.viewportHeight), this.clipWidth * gl.viewportWidth, this.clipHeight * gl.viewportHeight)
+    gl.scissor(this.clipX * gl.viewportWidth,
+      ((1 - this.clipY - this.clipHeight) * gl.viewportHeight),
+      this.clipWidth * gl.viewportWidth,
+      this.clipHeight * gl.viewportHeight)
   } else {
     gl.disable(gl.SCISSOR_TEST)
   }
@@ -688,7 +691,7 @@ class ShaderProgram {
       gl.compileShader(shader)
 
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        throw `Shader error: ${gl.getShaderInfoLog(shader)}`
+        throw new Error(`Shader error: ${gl.getShaderInfoLog(shader)}`)
       }
 
       return shader
@@ -716,19 +719,19 @@ class ShaderProgram {
       gl.deleteProgram(program)
       gl.deleteShader(vertexShader)
       gl.deleteShader(fragmentShader)
-      throw `Could not initialise shader: ${err}`
+      throw new Error(`Could not initialise shader: ${err}`)
     }
 
     this.program = program
 
     gl.useProgram(program)
-    const num_uniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS)
+    const numUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS)
     this.uniforms = []
     let i
     let info
     let name
     let loc
-    for (i = 0; i < num_uniforms; ++i) {
+    for (i = 0; i < numUniforms; ++i) {
       info = gl.getActiveUniform(program, i)
       name = info.name
       loc = gl.getUniformLocation(program, name)
@@ -739,9 +742,9 @@ class ShaderProgram {
       this.uniforms.push(info)
     }
 
-    const num_attribs = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES)
+    const numAttribs = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES)
     this.attributes = []
-    for (i = 0; i < num_attribs; ++i) {
+    for (i = 0; i < numAttribs; ++i) {
       info = gl.getActiveAttrib(program, i)
       name = info.name
       loc = gl.getAttribLocation(program, name)
@@ -797,7 +800,7 @@ function makeShaderSetter (info, loc) {
   }
 
   return () => {
-    throw `ShaderProgram doesn't know how to set type: ${info.type}`
+    throw new Error(`ShaderProgram doesn't know how to set type: ${info.type}`)
   }
 }
 
