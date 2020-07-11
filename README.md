@@ -100,4 +100,3 @@ To Do
 * Alternate color spaces (currently uses YUV)
 * Add key mode: luminance
 * Optimize fragment shader.
-* Use scissor for clipping
