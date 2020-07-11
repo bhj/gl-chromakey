@@ -312,10 +312,6 @@ function drawScreen (shader, sourceTexture, alphaTexture, channel) {
 
   // draw!
   gl.drawElements(gl.TRIANGLES, this._vertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0)
-  const err = gl.getError()
-  if (err) {
-    console.log(`draw error: ${err}`)
-  }
 
   // disable this again, in case someone else is using the same context
   if (this.clipping) {
