@@ -3,14 +3,6 @@ import fragmentShaderPaintSrc from './shaders/fragmentShaderPaint'
 import vertexShaderSrc from './shaders/vertexShader'
 let keyCount = 0
 
-function fail (msg) {
-  if (this.errorCallback) {
-    this.errorCallback(msg)
-  } else {
-    throw new Error(msg)
-  }
-}
-
 const nodeData = {
   video : {
     ready: 'readyState',
@@ -365,20 +357,12 @@ class ChromaGL {
   constructor (source, target, options) {
     const opts = options || {}
 
-    this.errorCallback = opts.errorCallback
-
     if (!this.hasWebGL()) {
-      fail.apply(this, 'Browser does not support WebGL')
-      return
+      throw new Error('Browser does not support WebGL')
     }
 
-    if (!this.source(source || false)) {
-      return false
-    }
-
-    if (!this.target(target || false)) {
-      return false
-    }
+    this.source(source)
+    this.target(target)
 
     // todo: put this in a method
     const clip = opts.clip || {}
@@ -417,15 +401,13 @@ class ChromaGL {
 
   source (source) {
     if (!source || !source.tagName) {
-      fail.apply(this, 'Missing source element')
-      return false
+      throw new Error('Missing source element')
     }
 
     this._data = nodeData[source.tagName.toLowerCase()]
 
     if (!this._data) {
-      fail.apply(this, 'Unsupported source media type')
-      return false
+      throw new Error('Unsupported source media type')
     }
 
     this._media = source
@@ -442,8 +424,7 @@ class ChromaGL {
     } else if (target instanceof WebGLRenderingContext) {
       this._context = target
     } else {
-      fail.apply(this, 'Target must be a canvas or context')
-      return false
+      throw new Error('Target must be an HTMLCanvasElement (or its WebGLRenderingContext)')
     }
 
     this.dirty = true
@@ -530,14 +511,12 @@ class ChromaGL {
 
       if (Array.isArray(key)) {
         if (key.length !== 3) {
-          fail.apply(this, 'Unsupported chroma key type')
-          return false
+          throw new Error('Unsupported chroma key type')
         }
         let j
         for (j = 0; j < 3; j++) {
           if (isNaN(key[j])) {
-            fail.apply(this, 'Unsupported chroma key type')
-            return false
+            throw new Error('Unsupported chroma key type')
           }
         }
         key = {
@@ -558,21 +537,19 @@ class ChromaGL {
             channel
           }
         } else {
-          fail.apply(this, 'Unknown chroma type')
-          return false
+          throw new Error('Unknown chroma type')
         }
       }
 
       if (typeof key !== 'object') {
-        fail.apply(this, 'Unsupported chroma key type')
-        return false
+        throw new Error('Unsupported chroma key type')
       }
 
       if (key.channel === undefined) {
         key.channel = channel
       }
       if (isNaN(key.channel) || key.channel < 0 || key.channel > 2) {
-        fail.apply(this, 'Unsupported channel')
+        throw new Error('Unsupported channel')
       }
 
       if (key.mode === 'chroma') {
@@ -580,14 +557,12 @@ class ChromaGL {
           key.threshold = key.threshold || 94.86832980505137
           key.fuzzy = key.fuzzy || 1.25
         } else {
-          fail.apply(this, 'Missing chroma color')
-          return false
+          throw new Error('Missing chroma color')
         }
       } else if (key.mode === 'pre') {
         key.source = key.source || 0
       } else {
-        fail.apply(this, 'Unsupported chroma key type')
-        return false
+        throw new Error('Unsupported chroma key type')
       }
 
       const clip = key.clip || {}

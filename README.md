@@ -11,7 +11,7 @@ Requirements
 ------------
 **ChromaGL** requires a browser with WebGL ([Chrome 9+, Firefox 4+, Safari nightly or Opera 11 for Windows](http://www.khronos.org/webgl/wiki/Getting_a_WebGL_Implementation)).
 
-The method `hasWebGL()` is provided to test whether browser supports WebGL.  If not, constructor will throw an error unless `errorCallback` function is provided in options.
+The method `hasWebGL()` is provided to test whether browser supports WebGL.
 
 Basic Usage
 -----------
@@ -33,7 +33,6 @@ API
 	* `clip` = object containing `x`, `y`, `width` and `height` representing clipping area (all parameters are 0 to 1, as factor of full image dimensions)
 	* `alpha` = object containing `x`, `y`, `width` and `height` representing part of image containing alpha mask
 	* `source` = object containing `x`, `y`, `width` and `height` representing part of image containing source to be keyed (for use with alpha)
-	* `errorCallback`: callback function to be called in case of error
 
 `.hasWebGL()`: returns true if browser supports WebGL, else false
 
