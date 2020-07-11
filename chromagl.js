@@ -3,10 +3,6 @@ import fragmentShaderPaintSrc from './shaders/fragmentShaderPaint'
 import vertexShaderSrc from './shaders/vertexShader'
 let keyCount = 0
 
-function checkType (object, type) {
-  return Object.prototype.toString.call(object) === `[object ${type}]`
-}
-
 function fail (msg) {
   if (this.errorCallback) {
     this.errorCallback(msg)
@@ -338,7 +334,7 @@ this._media[this._data.ready] === this._data.readyTarget ||
     initializeTextures.apply(this)
     setUpShaders.apply(this)
     this.render()
-    if (callback && checkType(callback, 'Function')) {
+    if (typeof callback === 'function') {
       callback()
     }
   } else {
@@ -445,36 +441,16 @@ class ChromaGL {
   }
 
   target (target) {
-    if (target === undefined) {
-      return this._target
-    }
-
-    let context
-    let element
-
-    if (checkType(target, 'WebGLRenderingContext')) {
-      context = target
-      element = target.canvas
-    } else if (target.tagName) {
-      element = target
-    }
-
-    if (!element) {
-      fail.apply(this, 'Missing target element')
-      return false
-    }
-
-    if (element && !checkType(element, 'HTMLCanvasElement')) {
+    if (target instanceof HTMLCanvasElement) {
+      this._context = target.getContext('webgl')
+    } else if (target instanceof WebGLRenderingContext) {
+      this._context = target
+    } else {
       fail.apply(this, 'Target must be a canvas or context')
       return false
     }
 
-    // set up WebGL context
-    context = element.getContext('webgl')
-    this._context = context
-    this._target = context
     this.dirty = true
-
     setUpWebGl.apply(this)
 
     return this
@@ -543,7 +519,7 @@ class ChromaGL {
     // todo: luminance key
     // todo: alternate color spaces
 
-    if (!checkType(keys, 'Array') || (keys.length && !isNaN(keys[0]))) {
+    if (!Array.isArray(keys) || (keys.length && !isNaN(keys[0]))) {
       keys = [keys]
     }
 
@@ -556,7 +532,7 @@ class ChromaGL {
       id = keyCount
       keyCount++
 
-      if (checkType(key, 'Array')) {
+      if (Array.isArray(key)) {
         if (key.length !== 3) {
           fail.apply(this, 'Unsupported chroma key type')
           return false
@@ -573,7 +549,7 @@ class ChromaGL {
           color: key,
           channel
         }
-      } else if (checkType(key, 'String')) {
+      } else if (typeof key === 'string') {
         if (key === 'pre') {
           key = {
             mode: 'pre',
@@ -591,7 +567,7 @@ class ChromaGL {
         }
       }
 
-      if (!checkType(key, 'Object')) {
+      if (typeof key !== 'object') {
         fail.apply(this, 'Unsupported chroma key type')
         return false
       }
@@ -636,7 +612,7 @@ class ChromaGL {
 
   removeChromaKey (id) {
     let ids
-    if (checkType(id, 'Array')) {
+    if (Array.isArray(id)) {
       ids = id
     } else {
       ids = [id]
