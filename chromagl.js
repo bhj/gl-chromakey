@@ -220,10 +220,10 @@ function drawScreen (shader, sourceTexture, alphaTexture, channel) {
   /* clipping */
   if (this.clipping) {
     gl.enable(gl.SCISSOR_TEST)
-    gl.scissor(this.clipX * gl.viewportWidth,
-      ((1 - this.clipY - this.clipHeight) * gl.viewportHeight),
-      this.clipWidth * gl.viewportWidth,
-      this.clipHeight * gl.viewportHeight)
+    gl.scissor(this.clipX * gl.canvas.width,
+      ((1 - this.clipY - this.clipHeight) * gl.canvas.height),
+      this.clipWidth * gl.canvas.width,
+      this.clipHeight * gl.canvas.height)
   } else {
     gl.disable(gl.SCISSOR_TEST)
   }
@@ -257,14 +257,13 @@ this._media[this._data.ready] === this._data.readyTarget ||
       callback()
     }
   } else {
-    const obj = this
     /*
 this._media.addEventListener( this._data.load , function() {
 checkReady.apply(obj, callback);
 }, false);
 */
     setTimeout(() => {
-      checkReady.apply(obj, callback)
+      checkReady.apply(this, callback)
     }, 0)
   }
 }
@@ -272,9 +271,7 @@ checkReady.apply(obj, callback);
 function setUpWebGl () {
   const gl = this._context
 
-  gl.viewportWidth = gl.canvas.width
-  gl.viewportHeight = gl.canvas.height
-  gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight)
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
   // set up frame buffer
   this.alphaFrameBuffer = new FrameBuffer(gl, gl.canvas.width, gl.canvas.height)
@@ -321,7 +318,6 @@ class ChromaGL {
     this._keys = {}
 
     this.initialized = true
-    this.dirty = true
     checkReady.call(this)
   }
 
@@ -341,8 +337,6 @@ class ChromaGL {
     }
 
     this._media = source
-    this.dirty = true
-
     checkReady.call(this)
 
     return this
@@ -357,52 +351,50 @@ class ChromaGL {
       throw new Error('Target must be an HTMLCanvasElement (or its WebGLRenderingContext)')
     }
 
-    this.dirty = true
     setUpWebGl.apply(this)
 
     return this
   }
 
   render (clear) {
-    if (this._mediaTexture && this._mediaTexture.image && this._media[this._data.ready]) {
-      const image = this._mediaTexture.image
-
-      if (image.lastUpdateFrame !== image.currentTime || image.currentTime === undefined) { // todo: do this better
-        if (image.currentTime === undefined) {
-          image.currentTime = 0
-        }
-
-        image.lastUpdateFrame = image.currentTime
-        refreshVideoTexture.call(this, this._mediaTexture)
-        this.dirty = true
-      }
+    if (!this._mediaTexture || !this._mediaTexture.image || !this._media[this._data.ready]) {
+      return
     }
 
-    if (this.dirty) {
-      if (clear) {
-        this._context.clearColor(0.0, 0.0, 0.0, 0.0)
-        this._context.clear(this._context.COLOR_BUFFER_BIT)
-      }
+    refreshVideoTexture.call(this, this._mediaTexture)
 
-      this.paint()
+    if (clear) {
+      this._context.clearColor(0.0, 0.0, 0.0, 0.0)
+      this._context.clear(this._context.COLOR_BUFFER_BIT)
     }
+
+    this.paint()
   }
 
   paint () {
-    if (this.alphaShader && this._media[this._data.ready]) {
-      const gl = this._context
-
-      // draw alpha channels to frame buffer
-      gl.bindFramebuffer(gl.FRAMEBUFFER, this.alphaFrameBuffer.frameBuffer)
-      gl.clear(gl.COLOR_BUFFER_BIT)
-      drawScreen.call(this, this.alphaShader, this._mediaTexture, null)
-      this.dirty = false
-
-      // draw to canvas
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-      drawScreen.call(this, this.paintShader, this._mediaTexture, this.alphaFrameBuffer.texture)
-      this.dirty = false
+    if (!this.alphaShader || !this._media[this._data.ready]) {
+      return
     }
+
+    const gl = this._context
+
+    // did target canvas change size since last paint?
+    if (this._context.canvas.width !== this._targetWidth || this._context.canvas.height !== this._targetHeight) {
+      this._targetWidth = this._context.canvas.width
+      this._targetHeight = this._context.canvas.height
+
+      gl.viewport(0, 0, this._targetWidth, this._targetHeight)
+      this.alphaFrameBuffer.setSize(this._targetWidth, this._targetHeight)
+    }
+
+    // draw alpha channels to frame buffer
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.alphaFrameBuffer.frameBuffer)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    drawScreen.call(this, this.alphaShader, this._mediaTexture, null)
+
+    // draw to canvas
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    drawScreen.call(this, this.paintShader, this._mediaTexture, this.alphaFrameBuffer.texture)
   }
 
   setThreshold (id, threshold, fuzzy) {
@@ -412,7 +404,6 @@ class ChromaGL {
       this._keys[id].fuzzy = isNaN(fuzzy) ? (isNaN(threshold) ? 1.25 : this._keys[id].fuzzy) : parseFloat(fuzzy)
 
       setUpShaders.apply(this)
-      this.dirty = true
       // this.paint();
     }
     return this
@@ -506,7 +497,6 @@ class ChromaGL {
     }
 
     setUpShaders.apply(this)
-    this.dirty = true
     this.render()
     return ids
   }
