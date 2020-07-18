@@ -96,13 +96,8 @@ function setUpShaders () {
     keyFunctions = 'pixel = sourcePixel;\n'
   }
 
-  const { sourceX, sourceY, sourceWidth, sourceHeight } = this
-
   this.alphaShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderAlphaSrc.replace('%keys%', keyFunctions))
-  this.alphaShader.set_sourceArea(sourceX, sourceY, sourceWidth, sourceHeight)
-
   this.paintShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderPaintSrc)
-  this.paintShader.set_sourceArea(sourceX, sourceY, sourceWidth, sourceHeight)
 }
 
 function initializeTextures () {
