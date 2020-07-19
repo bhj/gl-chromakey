@@ -90,8 +90,6 @@ function setUpShaders () {
 
   if (keyFunctions) {
     keyFunctions += 'pixel.a = min(pixel.r, min(pixel.g, pixel.b));\n'
-  } else {
-    keyFunctions = 'pixel = sourcePixel;\n'
   }
 
   this.alphaShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderAlphaSrc.replace('%keys%', keyFunctions))
@@ -259,7 +257,7 @@ class ChromaGL {
 
   target (target) {
     if (target instanceof HTMLCanvasElement) {
-      this._context = target.getContext('webgl')
+      this._context = target.getContext('webgl2')
     } else if (target instanceof WebGLRenderingContext) {
       this._context = target
     } else {
