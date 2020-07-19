@@ -4,8 +4,6 @@ import vertexShaderSrc from './lib/shaders/vertexShader'
 import ShaderProgram from './lib/ShaderProgram'
 import FrameBuffer from './lib/FrameBuffer'
 
-let keyCount = 0
-
 const nodeData = {
   video : {
     ready: 'readyState',
@@ -68,29 +66,27 @@ function buildWebGlBuffers () {
 
 function setUpShaders () {
   const gl = this._context
-  let i; let key; let keyFunctions = ''
+  let keyFunctions = ''
 
-  for (i in this._keys) {
-    if (this._keys.hasOwnProperty(i)) {
-      key = this._keys[i]
-      const r = key.color[0]
-      const g = key.color[1]
-      const b = key.color[2]
+  this._keys.forEach(key => {
+    const r = key.color[0]
+    const g = key.color[1]
+    const b = key.color[2]
+    const channel = key.channel || 0
 
-      let fuzzy = key.fuzzy
-      if (Math.floor(fuzzy) === fuzzy) {
-        fuzzy += '.0'
-      }
-
-      let thresh = key.threshold * key.threshold
-      if (Math.floor(thresh) === thresh) {
-        thresh += '.0'
-      }
-
-      // convert target color to YUV
-      keyFunctions += `pixel = distAlpha(${key.channel}, vec3(${0.2126 * r + 0.7152 * g + 0.0722 * b},${-0.2126 * r + -0.7152 * g + 0.9278 * b},${0.7874 * r + -0.7152 * g + 0.0722 * b}), ${thresh}, ${fuzzy}, pixel);\n`
+    let fuzzy = key.fuzzy
+    if (Math.floor(fuzzy) === fuzzy) {
+      fuzzy += '.0'
     }
-  }
+
+    let thresh = key.threshold * key.threshold
+    if (Math.floor(thresh) === thresh) {
+      thresh += '.0'
+    }
+
+    // convert target color to YUV
+    keyFunctions += `pixel = distAlpha(${channel}, vec3(${0.2126 * r + 0.7152 * g + 0.0722 * b},${-0.2126 * r + -0.7152 * g + 0.9278 * b},${0.7874 * r + -0.7152 * g + 0.0722 * b}), ${thresh}, ${fuzzy}, pixel);\n`
+  })
 
   if (!keyFunctions) {
     keyFunctions = 'pixel = sourcePixel;\n'
@@ -174,7 +170,6 @@ function drawScreen (shader, sourceTexture, alphaTexture, channel) {
         case 2:
           shader.set_alphaChannel(0, 0, 1, 0)
           break
-        case 3:
         default:
           shader.set_alphaChannel(0, 0, 0, 1)
           break
@@ -196,9 +191,8 @@ function checkReady (callback) {
     return
   }
 
-  if (!this._data.ready || !this._data.load ||
-this._media[this._data.ready] === this._data.readyTarget ||
-(this._data.readyTarget === undefined && this._media[this._data.ready])) {
+  if (!this._data.ready || !this._data.load || this._media[this._data.ready] === this._data.readyTarget ||
+      (this._data.readyTarget === undefined && this._media[this._data.ready])) {
     initializeTextures.apply(this)
     setUpShaders.apply(this)
     this.render()
@@ -206,11 +200,6 @@ this._media[this._data.ready] === this._data.readyTarget ||
       callback()
     }
   } else {
-    /*
-this._media.addEventListener( this._data.load , function() {
-checkReady.apply(obj, callback);
-}, false);
-*/
     setTimeout(() => {
       checkReady.apply(this, callback)
     }, 0)
@@ -235,11 +224,11 @@ class ChromaGL {
       throw new Error('Browser does not support WebGL')
     }
 
+    this._keys = []
     this.source(source)
     this.target(target)
 
     buildWebGlBuffers.apply(this)
-    this._keys = {}
     this.initialized = true
 
     checkReady.call(this)
@@ -321,104 +310,43 @@ class ChromaGL {
     drawScreen.call(this, this.paintShader, this._mediaTexture, this.alphaFrameBuffer.texture)
   }
 
-  setThreshold (id, threshold, fuzzy) {
-    if (this._keys[id]) {
-      this._keys[id].threshold = isNaN(threshold) ? 94.86832980505137 : parseFloat(threshold)
-
-      this._keys[id].fuzzy = isNaN(fuzzy) ? (isNaN(threshold) ? 1.25 : this._keys[id].fuzzy) : parseFloat(fuzzy)
-
-      setUpShaders.apply(this)
-      // this.paint();
-    }
-    return this
-  }
-
-  addChromaKey (keys, channel) {
-    const ids = []
-    let id
+  key (keys) {
+    this._keys = []
 
     if (!Array.isArray(keys) || (keys.length && !isNaN(keys[0]))) {
       keys = [keys]
     }
 
-    channel = channel || 0
-
-    let i
-    let key
-    for (i = 0; i < keys.length; i++) {
-      key = keys[i]
-      id = keyCount
-      keyCount++
-
+    keys.forEach(key => {
       if (Array.isArray(key)) {
-        if (key.length !== 3) {
-          throw new Error('Unsupported chroma key type')
-        }
-        let j
-        for (j = 0; j < 3; j++) {
-          if (isNaN(key[j])) {
-            throw new Error('Unsupported chroma key type')
-          }
-        }
+        if (key.length !== 3) throw new Error('Key color must be an array like [r, g, b]')
+        if (key.some(c => isNaN(c))) throw new Error('Invalid key color component')
+
         key = {
           color: key,
-          channel
         }
-      }
-
-      if (typeof key !== 'object') {
+      } else if (typeof key !== 'object') {
         throw new Error('Unsupported chroma key type')
       }
 
-      if (key.channel === undefined) {
-        key.channel = channel
-      }
-
-      if (isNaN(key.channel) || key.channel < 0 || key.channel > 2) {
+      if (key.channel && (isNaN(key.channel) || key.channel < 0 || key.channel > 2)) {
         throw new Error('Unsupported channel')
       }
 
-      if (key.color) {
+      if (Array.isArray(key.color) && key.color.length === 3) {
+        if (key.color.some(c => isNaN(c))) throw new Error('Invalid key color component')
+
         key.threshold = key.threshold || 94.86832980505137
         key.fuzzy = key.fuzzy || 1.25
       } else {
-        throw new Error('Missing chroma color')
+        throw new Error('Key color must be an array like [r, g, b]')
       }
 
-      const clip = key.clip || {}
-      key.clipX = clip.x || 0
-      key.clipY = clip.y || 0
-      key.clipWidth = clip.width || this._media[this._data.width] - this.clipX
-      key.clipHeight = clip.height || this._media[this._data.height] - this.clipY
-
-      ids.push(id)
-      this._keys[id] = key
-    }
+      this._keys.push(key)
+    })
 
     setUpShaders.apply(this)
     this.render()
-    return ids
-  }
-
-  removeChromaKey (id) {
-    let ids
-    if (Array.isArray(id)) {
-      ids = id
-    } else {
-      ids = [id]
-    }
-
-    let i
-    let theId
-    for (i = 0; i < ids.length; i++) {
-      theId = ids[i]
-      if (!isNaN(theId) && this._key.hasOwnProperty(theId)) {
-        delete this._key[theId]
-      }
-    }
-
-    setUpShaders.apply(this)
-    this.dirty = true
   }
 }
 
