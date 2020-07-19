@@ -1,78 +1,41 @@
 ChromaGL
 ========
-Chroma Key video effect in a web page.
-
-Two modes:
-
-- `chroma`: keys out pixels based on color within euclidean distance from target color
-- `pre`: video frame is split in half, containing source image (usually top half) and an alpha mask (usually bottom half).  Eventually will support up to three alpha masks (one in each color channel).
+Chroma key a `<video>` in realtime using the GPU
 
 Requirements
 ------------
-**ChromaGL** requires a browser with WebGL ([Chrome 9+, Firefox 4+, Safari nightly or Opera 11 for Windows](http://www.khronos.org/webgl/wiki/Getting_a_WebGL_Implementation)).
-
-The method `hasWebGL()` is provided to test whether browser supports WebGL.
-
-Basic Usage
------------
-For a video with a green background, on a page with one `<video>` element and one `<canvas>`
-
-	window.addEventListener('load',function() {
-		var chroma = new ChromaGL('video', 'canvas');
-		chroma.addChromaKey('green');
-		chroma.go();
-	}, false);
+Browser with ([WebGL 2 support](https://caniuse.com/#feat=webgl2)). The `hasWebGL()` method is provided to test support.
 
 API
 ---
-`ChromaGL(source, target, options)`: Object constructor
+`ChromaGL(source, target)`: Object constructor
 
-- source = canvas/img/video object
-- target = canvas object
-- options (not required):
-	* `clip` = object containing `x`, `y`, `width` and `height` representing clipping area (all parameters are 0 to 1, as factor of full image dimensions)
-	* `alpha` = object containing `x`, `y`, `width` and `height` representing part of image containing alpha mask
-	* `source` = object containing `x`, `y`, `width` and `height` representing part of image containing source to be keyed (for use with alpha)
+- source = Source video, image or canvas element to key
+- target = Target canvas element on which to paint keyed image(s)
+
 
 `.hasWebGL()`: returns true if browser supports WebGL, else false
 
 
-`.source(source)`: Set source containing video or image to key. Can be changed after object creation.  
+`.source(source)`: Sets a new source video, image or canvas element to key.
 
 - source = canvas/img/video object
 
 
-`.target(target)`: Set target canvas on which to paint keyed image. Can be changed after object creation.
+`.target(target)`: Sets a new target canvas on which to paint keyed image(s).
 
 - target = canvas object
 
 
-`.addChromaKey(keys, channel)`: add one or more chroma key configurations. returns array of key id's, in case you want to remove them later
+`.key(keys)`: Sets one or more chroma key configurations, replacing any previously configured.
 
-- keys = array or single of key parameters, any of the following formats:
-	- string: 'pre' = pre-computed alpha channel, defaults to
-	- string: 'blue' or 'green' color preset
-	- array of 3 numbers: RGB color
-	- object: params for color/pre-rendered key
-		- `mode` (required): 'pre' for pre-computed or 'chroma' for color-based
-		- `color` (required): 'blue' or 'green' or array of 3 numbers (chroma mode only)
-		- `threshold`: Euclidean distance cutoff (chroma mode only)
-		- `fuzzy`: float >= 1.0, multiple of threshold as outer limit of feathering (chroma mode only)
-		- `source`: which channel contains alpha mask. 0 = red, 1 = blue, 2 = green (pre mode only)
-		- `channel`: select an output channel (overrides `channel` parameter to method)
-- channel: select an output channel 0 = red, 1 = blue, 2 = green
-
-
-`.removeChromaKey(id)`  
-
-- id = single or array of integers of keys to delete
-
-
-`.setThreshold(id, threshold, fuzzy)`: Change chroma key parameters for distance threshold
-
-- id = key to modify
-- threshold = Euclidean distance cutoff
-- fuzzy (optional) = float >= 1.0, multiple of threshold as outer limit of feathering
+- keys = either of the following:
+	- array of color values like `[r, g, b]` (single key color with default `threshold`, `fuzzy`, `channel`)
+	- array of objects with properties:
+		- `color` (required): array of color values like `[r, g, b]`
+		- `threshold`: Euclidean distance cutoff
+		- `fuzzy`: float >= 1.0, multiple of threshold as outer limit of feathering
+		- `channel`: select an output channel (0 = red, 1 = blue, 2 = green)
 
 
 `.render(clear)`: Updates frame from video and paints to canvas  
@@ -83,19 +46,11 @@ API
 `.paint()`: Re-paints current frame to canvas  
 
 
-Notes
------
-
 To Do
 -----
 * Add WebGL framebuffer/texture to acceptable source media types
 * Add WebGL framebuffer/texture as acceptable target instead of canvas
 * Provide more complete examples
-* Add method for changing clipping area
-* Allow clipping area for individual keys
-* Add method/option for scaling?
-* Add method for modifying source/alpha dimensions?
 * Allow external static image as alpha mask?
 * Alternate color spaces (currently uses YUV)
-* Add key mode: luminance
-* Optimize fragment shader.
+* Optimize fragment shader

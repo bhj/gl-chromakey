@@ -4,8 +4,6 @@ import vertexShaderSrc from './lib/shaders/vertexShader'
 import ShaderProgram from './lib/ShaderProgram'
 import FrameBuffer from './lib/FrameBuffer'
 
-let keyCount = 0
-
 const nodeData = {
   video : {
     ready: 'readyState',
@@ -26,11 +24,6 @@ const nodeData = {
     width: 'width',
     height: 'height'
   }
-}
-
-const colors = {
-  green: [0, 255, 0],
-  blue: [50, 70, 135]
 }
 
 function buildWebGlBuffers () {
@@ -73,66 +66,36 @@ function buildWebGlBuffers () {
 
 function setUpShaders () {
   const gl = this._context
+  let keyFunctions = ''
 
-  let i; let key; let keyFunctions = ''
-  let hasPreCalc = false
-  for (i in this._keys) {
-    if (this._keys.hasOwnProperty(i)) {
-      key = this._keys[i]
-      if (key.mode === 'chroma') {
-        const r = key.color[0]
-        const g = key.color[1]
-        const b = key.color[2]
+  this._keys.forEach(key => {
+    const r = key.color[0]
+    const g = key.color[1]
+    const b = key.color[2]
+    const channel = key.channel || 0
 
-        let fuzzy = key.fuzzy
-        if (Math.floor(fuzzy) === fuzzy) {
-          fuzzy += '.0'
-        }
-
-        let thresh = key.threshold * key.threshold
-        if (Math.floor(thresh) === thresh) {
-          thresh += '.0'
-        }
-
-        // convert target color to YUV
-        keyFunctions += `pixel = distAlpha(${key.channel}, vec3(${0.2126 * r + 0.7152 * g + 0.0722 * b},${-0.2126 * r + -0.7152 * g + 0.9278 * b},${0.7874 * r + -0.7152 * g + 0.0722 * b}), ${thresh}, ${fuzzy}, pixel);\n`
-      } else {
-        hasPreCalc = true
-        keyFunctions += `pixel = preAlpha(${key.source},${key.channel}, pixel);\n`
-      }
+    let fuzzy = key.fuzzy
+    if (Math.floor(fuzzy) === fuzzy) {
+      fuzzy += '.0'
     }
-  }
 
-  if (!keyFunctions) {
+    let thresh = key.threshold * key.threshold
+    if (Math.floor(thresh) === thresh) {
+      thresh += '.0'
+    }
+
+    // convert target color to YUV
+    keyFunctions += `pixel = distAlpha(${channel}, vec3(${0.2126 * r + 0.7152 * g + 0.0722 * b},${-0.2126 * r + -0.7152 * g + 0.9278 * b},${0.7874 * r + -0.7152 * g + 0.0722 * b}), ${thresh}, ${fuzzy}, pixel);\n`
+  })
+
+  if (keyFunctions) {
+    keyFunctions += 'pixel.a = min(pixel.r, min(pixel.g, pixel.b));\n'
+  } else {
     keyFunctions = 'pixel = sourcePixel;\n'
   }
 
-  let fragmentSrc = fragmentShaderAlphaSrc.replace('%keys%', keyFunctions)
-  if (hasPreCalc) {
-    fragmentSrc = `#define pre\n${fragmentSrc}`
-  }
-  this.alphaShader = new ShaderProgram(gl, vertexShaderSrc, fragmentSrc)
-
-  const sourceX = this.sourceX
-  const sourceY = this.sourceY
-  const sourceWidth = this.sourceWidth
-  const sourceHeight = this.sourceHeight
-
-  const alphaX = this.alphaX
-  const alphaY = this.alphaY
-  const alphaWidth = this.alphaWidth
-  const alphaHeight = this.alphaHeight
-
-  this.alphaShader.set_sourceArea(sourceX, sourceY, sourceWidth, sourceHeight)
-  this.alphaShader.set_alphaArea(alphaX, alphaY, alphaWidth, alphaHeight)
-
-  let painterSrc = fragmentShaderPaintSrc
-  if (hasPreCalc) {
-    painterSrc = `#define pre\n${painterSrc}`
-  }
-  this.paintShader = new ShaderProgram(gl, vertexShaderSrc, painterSrc)
-  this.paintShader.set_sourceArea(sourceX, sourceY, sourceWidth, sourceHeight)
-  this.paintShader.set_alphaArea(alphaX, alphaY, alphaWidth, alphaHeight)
+  this.alphaShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderAlphaSrc.replace('%keys%', keyFunctions))
+  this.paintShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderPaintSrc)
 }
 
 function initializeTextures () {
@@ -209,23 +172,11 @@ function drawScreen (shader, sourceTexture, alphaTexture, channel) {
         case 2:
           shader.set_alphaChannel(0, 0, 1, 0)
           break
-        case 3:
         default:
           shader.set_alphaChannel(0, 0, 0, 1)
           break
       }
     }
-  }
-
-  /* clipping */
-  if (this.clipping) {
-    gl.enable(gl.SCISSOR_TEST)
-    gl.scissor(this.clipX * gl.canvas.width,
-      ((1 - this.clipY - this.clipHeight) * gl.canvas.height),
-      this.clipWidth * gl.canvas.width,
-      this.clipHeight * gl.canvas.height)
-  } else {
-    gl.disable(gl.SCISSOR_TEST)
   }
 
   /* do this every time */
@@ -235,11 +186,6 @@ function drawScreen (shader, sourceTexture, alphaTexture, channel) {
 
   // draw!
   gl.drawElements(gl.TRIANGLES, this._vertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0)
-
-  // disable this again, in case someone else is using the same context
-  if (this.clipping) {
-    gl.disable(gl.SCISSOR_TEST)
-  }
 }
 
 function checkReady (callback) {
@@ -247,9 +193,8 @@ function checkReady (callback) {
     return
   }
 
-  if (!this._data.ready || !this._data.load ||
-this._media[this._data.ready] === this._data.readyTarget ||
-(this._data.readyTarget === undefined && this._media[this._data.ready])) {
+  if (!this._data.ready || !this._data.load || this._media[this._data.ready] === this._data.readyTarget ||
+      (this._data.readyTarget === undefined && this._media[this._data.ready])) {
     initializeTextures.apply(this)
     setUpShaders.apply(this)
     this.render()
@@ -257,11 +202,6 @@ this._media[this._data.ready] === this._data.readyTarget ||
       callback()
     }
   } else {
-    /*
-this._media.addEventListener( this._data.load , function() {
-checkReady.apply(obj, callback);
-}, false);
-*/
     setTimeout(() => {
       checkReady.apply(this, callback)
     }, 0)
@@ -281,43 +221,18 @@ function setUpWebGl () {
 }
 
 class ChromaGL {
-  constructor (source, target, options) {
-    const opts = options || {}
-
+  constructor (source, target) {
     if (!this.hasWebGL()) {
       throw new Error('Browser does not support WebGL')
     }
 
+    this._keys = []
     this.source(source)
     this.target(target)
 
-    // todo: put this in a method
-    const clip = opts.clip || {}
-    this.clipX = clip.x || 0
-    this.clipY = clip.y || 0
-    this.clipWidth = clip.width || 1 - this.clipX
-    this.clipHeight = clip.height || 1 - this.clipY
-    this.clipping = (this.clipX || this.clipY || this.clipWidth < 1 || this.clipHeight < 1)
-
-    // todo: scale (x and y) option?
-
-    // todo: put this in a method
-    const sourceDimensions = opts.source || {}
-    this.sourceX = sourceDimensions.x || 0
-    this.sourceY = sourceDimensions.x || 0
-    this.sourceWidth = sourceDimensions.width || 1 - this.sourceX
-    this.sourceHeight = sourceDimensions.height || (0.5 - this.sourceY)
-    const alpha = opts.alpha || {}
-    this.alphaX = alpha.x || 0
-    this.alphaY = alpha.y !== undefined ? alpha.y : this.sourceHeight
-    this.alphaWidth = alpha.width !== undefined ? alpha.width : 1 - this.alphaX
-    this.alphaHeight = alpha.height !== undefined ? alpha.height : (1 - this.alphaY)
-
     buildWebGlBuffers.apply(this)
-
-    this._keys = {}
-
     this.initialized = true
+
     checkReady.call(this)
   }
 
@@ -397,129 +312,43 @@ class ChromaGL {
     drawScreen.call(this, this.paintShader, this._mediaTexture, this.alphaFrameBuffer.texture)
   }
 
-  setThreshold (id, threshold, fuzzy) {
-    if (this._keys[id] && this._keys[id].mode === 'chroma') {
-      this._keys[id].threshold = isNaN(threshold) ? 94.86832980505137 : parseFloat(threshold)
-
-      this._keys[id].fuzzy = isNaN(fuzzy) ? (isNaN(threshold) ? 1.25 : this._keys[id].fuzzy) : parseFloat(fuzzy)
-
-      setUpShaders.apply(this)
-      // this.paint();
-    }
-    return this
-  }
-
-  addChromaKey (keys, channel) {
-    const ids = []
-    let id
-
-    // todo: allow static image/canvas as mask
-    // todo: luminance key
-    // todo: alternate color spaces
+  key (keys) {
+    this._keys = []
 
     if (!Array.isArray(keys) || (keys.length && !isNaN(keys[0]))) {
       keys = [keys]
     }
 
-    channel = channel || 0
-
-    let i
-    let key
-    for (i = 0; i < keys.length; i++) {
-      key = keys[i]
-      id = keyCount
-      keyCount++
-
+    keys.forEach(key => {
       if (Array.isArray(key)) {
-        if (key.length !== 3) {
-          throw new Error('Unsupported chroma key type')
-        }
-        let j
-        for (j = 0; j < 3; j++) {
-          if (isNaN(key[j])) {
-            throw new Error('Unsupported chroma key type')
-          }
-        }
-        key = {
-          mode: 'chroma',
-          color: key,
-          channel
-        }
-      } else if (typeof key === 'string') {
-        if (key === 'pre') {
-          key = {
-            mode: 'pre',
-            channel
-          }
-        } else if (colors[key]) {
-          key = {
-            mode: 'chroma',
-            color: colors[key],
-            channel
-          }
-        } else {
-          throw new Error('Unknown chroma type')
-        }
-      }
+        if (key.length !== 3) throw new Error('Key color must be an array like [r, g, b]')
+        if (key.some(c => isNaN(c))) throw new Error('Invalid key color component')
 
-      if (typeof key !== 'object') {
+        key = {
+          color: key,
+        }
+      } else if (typeof key !== 'object') {
         throw new Error('Unsupported chroma key type')
       }
 
-      if (key.channel === undefined) {
-        key.channel = channel
-      }
-      if (isNaN(key.channel) || key.channel < 0 || key.channel > 2) {
+      if (key.channel && (isNaN(key.channel) || key.channel < 0 || key.channel > 2)) {
         throw new Error('Unsupported channel')
       }
 
-      if (key.mode === 'chroma') {
-        if (key.color) {
-          key.threshold = key.threshold || 94.86832980505137
-          key.fuzzy = key.fuzzy || 1.25
-        } else {
-          throw new Error('Missing chroma color')
-        }
-      } else if (key.mode === 'pre') {
-        key.source = key.source || 0
+      if (Array.isArray(key.color) && key.color.length === 3) {
+        if (key.color.some(c => isNaN(c))) throw new Error('Invalid key color component')
+
+        key.threshold = key.threshold || 94.86832980505137
+        key.fuzzy = key.fuzzy || 1.25
       } else {
-        throw new Error('Unsupported chroma key type')
+        throw new Error('Key color must be an array like [r, g, b]')
       }
 
-      const clip = key.clip || {}
-      key.clipX = clip.x || 0
-      key.clipY = clip.y || 0
-      key.clipWidth = clip.width || this._media[this._data.width] - this.clipX
-      key.clipHeight = clip.height || this._media[this._data.height] - this.clipY
-
-      ids.push(id)
-      this._keys[id] = key
-    }
+      this._keys.push(key)
+    })
 
     setUpShaders.apply(this)
     this.render()
-    return ids
-  }
-
-  removeChromaKey (id) {
-    let ids
-    if (Array.isArray(id)) {
-      ids = id
-    } else {
-      ids = [id]
-    }
-
-    let i
-    let theId
-    for (i = 0; i < ids.length; i++) {
-      theId = ids[i]
-      if (!isNaN(theId) && this._key.hasOwnProperty(theId)) {
-        delete this._key[theId]
-      }
-    }
-
-    setUpShaders.apply(this)
-    this.dirty = true
   }
 }
 
