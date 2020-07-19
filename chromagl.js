@@ -88,7 +88,9 @@ function setUpShaders () {
     keyFunctions += `pixel = distAlpha(${channel}, vec3(${0.2126 * r + 0.7152 * g + 0.0722 * b},${-0.2126 * r + -0.7152 * g + 0.9278 * b},${0.7874 * r + -0.7152 * g + 0.0722 * b}), ${thresh}, ${fuzzy}, pixel);\n`
   })
 
-  if (!keyFunctions) {
+  if (keyFunctions) {
+    keyFunctions += 'pixel.a = min(pixel.r, min(pixel.g, pixel.b));\n'
+  } else {
     keyFunctions = 'pixel = sourcePixel;\n'
   }
 
