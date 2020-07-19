@@ -7,7 +7,6 @@ import FrameBuffer from './lib/FrameBuffer'
 const nodeData = {
   video : {
     ready: 'readyState',
-    //      readyTarget: 2,
     load: 'canplay',
     width: 'videoWidth',
     height: 'videoHeight'
@@ -28,7 +27,7 @@ const nodeData = {
 
 function buildWebGlBuffers () {
   // todo: change this to line_strip or fan for speed?
-  const gl = this._context
+  const gl = this._gl
   const vertexPositionBuffer = gl.createBuffer()
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
@@ -65,7 +64,7 @@ function buildWebGlBuffers () {
 }
 
 function setUpShaders () {
-  const gl = this._context
+  const gl = this._gl
   let keyFunctions = ''
 
   this._keys.forEach(key => {
@@ -85,6 +84,7 @@ function setUpShaders () {
     }
 
     // convert target color to YUV
+    /* eslint-disable-next-line max-len */
     keyFunctions += `pixel = distAlpha(${channel}, vec3(${0.2126 * r + 0.7152 * g + 0.0722 * b},${-0.2126 * r + -0.7152 * g + 0.9278 * b},${0.7874 * r + -0.7152 * g + 0.0722 * b}), ${thresh}, ${fuzzy}, pixel);\n`
   })
 
@@ -92,12 +92,12 @@ function setUpShaders () {
     keyFunctions += 'pixel.a = min(pixel.r, min(pixel.g, pixel.b));\n'
   }
 
-  this.alphaShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderAlphaSrc.replace('%keys%', keyFunctions))
-  this.paintShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderPaintSrc)
+  this._alphaShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderAlphaSrc.replace('%keys%', keyFunctions))
+  this._paintShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderPaintSrc)
 }
 
 function initializeTextures () {
-  const gl = this._context
+  const gl = this._gl
 
   // this assumes media has been loaded
   function loadTexture (media) {
@@ -123,7 +123,7 @@ function initializeTextures () {
 }
 
 function refreshVideoTexture (texture) {
-  const gl = this._context
+  const gl = this._gl
 
   gl.bindTexture(gl.TEXTURE_2D, texture)
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image)
@@ -131,7 +131,7 @@ function refreshVideoTexture (texture) {
 }
 
 function drawScreen (shader, sourceTexture, alphaTexture, channel) {
-  const gl = this._context
+  const gl = this._gl
   shader.useProgram()
 
   /* todo: do this all only once at the beginning, since we only have one model */
@@ -207,7 +207,7 @@ function checkReady (callback) {
 }
 
 function setUpWebGl () {
-  const gl = this._context
+  const gl = this._gl
 
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
@@ -220,8 +220,8 @@ function setUpWebGl () {
 
 class ChromaGL {
   constructor (source, target) {
-    if (!this.hasWebGL()) {
-      throw new Error('Browser does not support WebGL')
+    if (!this.hasWebGL2()) {
+      throw new Error('Browser does not support WebGL 2')
     }
 
     this._keys = []
@@ -234,8 +234,12 @@ class ChromaGL {
     checkReady.call(this)
   }
 
-  hasWebGL () {
-    return !!window.WebGLRenderingContext
+  hasWebGL2 () {
+    try {
+      return !!window.WebGLRenderingContext && !!document.createElement('canvas').getContext('webgl2')
+    } catch (e) {
+      return false
+    }
   }
 
   source (source) {
@@ -257,9 +261,9 @@ class ChromaGL {
 
   target (target) {
     if (target instanceof HTMLCanvasElement) {
-      this._context = target.getContext('webgl2')
+      this._gl = target.getContext('webgl2')
     } else if (target instanceof WebGLRenderingContext) {
-      this._context = target
+      this._gl = target
     } else {
       throw new Error('Target must be an HTMLCanvasElement (or its WebGLRenderingContext)')
     }
@@ -277,24 +281,24 @@ class ChromaGL {
     refreshVideoTexture.call(this, this._mediaTexture)
 
     if (clear) {
-      this._context.clearColor(0.0, 0.0, 0.0, 0.0)
-      this._context.clear(this._context.COLOR_BUFFER_BIT)
+      this._gl.clearColor(0.0, 0.0, 0.0, 0.0)
+      this._gl.clear(this._gl.COLOR_BUFFER_BIT)
     }
 
     this.paint()
   }
 
   paint () {
-    if (!this.alphaShader || !this._media[this._data.ready]) {
+    if (!this._alphaShader || !this._media[this._data.ready]) {
       return
     }
 
-    const gl = this._context
+    const gl = this._gl
 
     // did target canvas change size since last paint?
-    if (this._context.canvas.width !== this._targetWidth || this._context.canvas.height !== this._targetHeight) {
-      this._targetWidth = this._context.canvas.width
-      this._targetHeight = this._context.canvas.height
+    if (gl.canvas.width !== this._targetWidth || gl.canvas.height !== this._targetHeight) {
+      this._targetWidth = gl.canvas.width
+      this._targetHeight = gl.canvas.height
 
       gl.viewport(0, 0, this._targetWidth, this._targetHeight)
       this.alphaFrameBuffer.setSize(this._targetWidth, this._targetHeight)
@@ -303,11 +307,13 @@ class ChromaGL {
     // draw alpha channels to frame buffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.alphaFrameBuffer.frameBuffer)
     gl.clear(gl.COLOR_BUFFER_BIT)
-    drawScreen.call(this, this.alphaShader, this._mediaTexture, null)
+    drawScreen.call(this, this._alphaShader, this._mediaTexture, null)
 
     // draw to canvas
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    drawScreen.call(this, this.paintShader, this._mediaTexture, this.alphaFrameBuffer.texture)
+    drawScreen.call(this, this._paintShader, this._mediaTexture, this.alphaFrameBuffer.texture)
+
+    return this
   }
 
   key (keys) {
@@ -347,6 +353,17 @@ class ChromaGL {
 
     setUpShaders.apply(this)
     this.render()
+  }
+
+  unload () {
+    if (!this._gl || !this._alphaShader || !this._paintShader) return
+
+    this._alphaShader.unload()
+    this._paintShader.unload()
+    this._gl.deleteBuffer(this._vertexPositionBuffer)
+    this._gl.deleteBuffer(this._vertexIndexBuffer)
+    this._gl.deleteBuffer(this._texCoordBuffer)
+    this._gl.deleteTexture(this._mediaTexture)
   }
 }
 

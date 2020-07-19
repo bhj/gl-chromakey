@@ -4,7 +4,7 @@ Chroma key a `<video>` in realtime using the GPU
 
 Requirements
 ------------
-Browser with ([WebGL 2 support](https://caniuse.com/#feat=webgl2)). The `hasWebGL()` method is provided to test support.
+Browser with ([WebGL 2 support](https://caniuse.com/#feat=webgl2)). The `hasWebGL2()` method is provided to test support.
 
 API
 ---
@@ -14,7 +14,7 @@ API
 - target = Target canvas element on which to paint keyed image(s)
 
 
-`.hasWebGL()`: returns true if browser supports WebGL, else false
+`.hasWebGL2()`: returns true if browser supports WebGL 2, else false
 
 
 `.source(source)`: Sets a new source video, image or canvas element to key.
