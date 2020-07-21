@@ -1,6 +1,6 @@
 ChromaGL
 ========
-Chroma key a `<video>` in realtime using the GPU
+Chroma key a video, image or canvas element in realtime using the GPU
 
 Requirements
 ------------
@@ -45,11 +45,7 @@ API
 `.paint()`: Re-paints current frame to canvas  
 
 
-To Do
------
-* Add WebGL framebuffer/texture to acceptable source media types
-* Add WebGL framebuffer/texture as acceptable target instead of canvas
-* Provide more complete examples
-* Allow external static image as alpha mask?
-* Alternate color spaces (currently uses YUV)
-* Optimize fragment shader
+License
+-------
+
+[ISC](https://opensource.org/licenses/ISC)
