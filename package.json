@@ -2,7 +2,6 @@
   "name": "chromagl",
   "version": "0.0.1",
   "description": "",
-  "main": "chromagl.js",
   "private": true,
   "scripts": {
     "lint": "eslint .",
