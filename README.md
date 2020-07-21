@@ -27,15 +27,14 @@ API
 - target = canvas object
 
 
-`.key(keys)`: Sets one or more chroma key configurations, replacing any previously configured.
+`.key([key] [, ...keyN])`: Sets one or more key configurations, replacing any previous key(s). Calling without parameters will clear all keys.
 
-- keys = either of the following:
-	- array of color values like `[r, g, b]` (single key color with default `threshold`, `fuzzy`, `channel`)
+- key = any of the following:
+	- the string `'auto'`
+	- array of color values like `[r, g, b]` (single key color with default `tolerance`)
 	- array of objects with properties:
-		- `color` (required): array of color values like `[r, g, b]`
-		- `threshold`: Euclidean distance cutoff
-		- `fuzzy`: float >= 1.0, multiple of threshold as outer limit of feathering
-		- `channel`: select an output channel (0 = red, 1 = blue, 2 = green)
+		- `color` (required): the string `'auto'` or an array of color values like `[r, g, b]`
+		- `tolerance`: float ranged 0-1 (default=`0.3`)
 
 
 `.render(clear)`: Updates frame from video and paints to canvas  

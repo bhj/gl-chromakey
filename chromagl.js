@@ -67,30 +67,12 @@ function setUpShaders () {
   const gl = this._gl
   let keyFunctions = ''
 
-  this._keys.forEach(key => {
-    const r = key.color[0]
-    const g = key.color[1]
-    const b = key.color[2]
-    const channel = key.channel || 0
+  this._keys.forEach(k => {
+    const color = (k.color === 'auto') ? '-1,-1,-1' : `${k.color[0] / 255},${k.color[1] / 255},${k.color[2] / 255}`
+    const tolerance = isNaN(k.tolerance) ? 0.3 : k.tolerance
 
-    let fuzzy = key.fuzzy
-    if (Math.floor(fuzzy) === fuzzy) {
-      fuzzy += '.0'
-    }
-
-    let thresh = key.threshold * key.threshold
-    if (Math.floor(thresh) === thresh) {
-      thresh += '.0'
-    }
-
-    // convert target color to YUV
-    /* eslint-disable-next-line max-len */
-    keyFunctions += `pixel = distAlpha(${channel}, vec3(${0.2126 * r + 0.7152 * g + 0.0722 * b},${-0.2126 * r + -0.7152 * g + 0.9278 * b},${0.7874 * r + -0.7152 * g + 0.0722 * b}), ${thresh}, ${fuzzy}, pixel);\n`
+    keyFunctions += `pixel = distAlpha(vec3(${color}), ${tolerance.toFixed(1)}, pixel);\n`
   })
-
-  if (keyFunctions) {
-    keyFunctions += 'pixel.a = min(pixel.r, min(pixel.g, pixel.b));\n'
-  }
 
   this._alphaShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderAlphaSrc.replace('%keys%', keyFunctions))
   this._paintShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderPaintSrc)
@@ -130,7 +112,7 @@ function refreshVideoTexture (texture) {
   gl.bindTexture(gl.TEXTURE_2D, null)
 }
 
-function drawScreen (shader, sourceTexture, alphaTexture, channel) {
+function drawScreen (shader, sourceTexture, alphaTexture) {
   const gl = this._gl
   shader.useProgram()
 
@@ -157,24 +139,6 @@ function drawScreen (shader, sourceTexture, alphaTexture, channel) {
     shader.set_alpha(1)
     gl.activeTexture(gl.TEXTURE1)
     gl.bindTexture(gl.TEXTURE_2D, alphaTexture)
-    if (shader.set_alphaChannel) {
-      // set this vector because a dot product should be MUCH faster in a shader than a big "if" statement
-      // ...in theory.
-      switch (channel) {
-        case 0:
-          shader.set_alphaChannel(1, 0, 0, 0)
-          break
-        case 1:
-          shader.set_alphaChannel(0, 1, 0, 0)
-          break
-        case 2:
-          shader.set_alphaChannel(0, 0, 1, 0)
-          break
-        default:
-          shader.set_alphaChannel(0, 0, 0, 1)
-          break
-      }
-    }
   }
 
   /* do this every time */
@@ -316,36 +280,29 @@ class ChromaGL {
     return this
   }
 
-  key (keys) {
+  key (...keys) {
     this._keys = []
 
-    if (!Array.isArray(keys) || (keys.length && !isNaN(keys[0]))) {
-      keys = [keys]
+    if (Array.isArray(keys[0]) && Array.isArray(keys[0][0])) {
+      keys = keys[0]
     }
 
+    // validate
     keys.forEach(key => {
       if (Array.isArray(key)) {
-        if (key.length !== 3) throw new Error('Key color must be an array like [r, g, b]')
+        if (key.length !== 3) throw new Error('Key color must be \'auto\' or an array like [r, g, b]')
         if (key.some(c => isNaN(c))) throw new Error('Invalid key color component')
-
-        key = {
-          color: key,
+        key = { color: key }
+      } else if (typeof key === 'object') {
+        if (Array.isArray(key.color) && key.color.length === 3) {
+          if (key.color.some(c => isNaN(c))) throw new Error('Invalid key color component')
+        } else if (key.color !== 'auto') {
+          throw new Error('Key color must be \'auto\' or an array like [r, g, b]')
         }
-      } else if (typeof key !== 'object') {
-        throw new Error('Unsupported chroma key type')
-      }
-
-      if (key.channel && (isNaN(key.channel) || key.channel < 0 || key.channel > 2)) {
-        throw new Error('Unsupported channel')
-      }
-
-      if (Array.isArray(key.color) && key.color.length === 3) {
-        if (key.color.some(c => isNaN(c))) throw new Error('Invalid key color component')
-
-        key.threshold = key.threshold || 94.86832980505137
-        key.fuzzy = key.fuzzy || 1.25
+      } else if (key === 'auto') {
+        key = { color: 'auto' }
       } else {
-        throw new Error('Key color must be an array like [r, g, b]')
+        throw new Error('Unsupported chroma key type')
       }
 
       this._keys.push(key)
