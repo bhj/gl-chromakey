@@ -1,20 +1,30 @@
 {
-  "name": "chromagl",
-  "version": "0.0.1",
-  "description": "",
-  "private": true,
+  "name": "gl-chromakey",
+  "version": "1.0.0-beta.1",
+  "description": "Chroma key a video/image/canvas element in real time using the GPU",
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "chroma",
+    "chromakey",
+    "greenscreen",
+    "gl",
+    "gpu",
+    "video",
+    "image",
+    "canvas",
+    "webgl"
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bhj/ChromaGL.git"
+    "url": "git+https://github.com/bhj/gl-chromakey.git"
   },
-  "author": "Brandon Jones",
+  "author": "Brandon H. Jones",
   "license": "ISC",
-  "homepage": "https://github.com/bhj/ChromaGL#readme",
+  "homepage": "https://github.com/bhj/gl-chromakey",
   "devDependencies": {
     "eslint": "^7.4.0",
     "eslint-config-standard": "^14.1.1",
