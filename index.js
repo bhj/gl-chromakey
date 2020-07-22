@@ -237,17 +237,12 @@ class ChromaGL {
     return this
   }
 
-  render (clear) {
+  render () {
     if (!this._mediaTexture || !this._mediaTexture.image || !this._media[this._data.ready]) {
       return
     }
 
     refreshVideoTexture.call(this, this._mediaTexture)
-
-    if (clear) {
-      this._gl.clearColor(0.0, 0.0, 0.0, 0.0)
-      this._gl.clear(this._gl.COLOR_BUFFER_BIT)
-    }
 
     this.paint()
   }
