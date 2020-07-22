@@ -31,9 +31,13 @@ const chroma = new GLChroma(video, canvas)
 
 ## Methods
 
+### `.hasWebGL2()`
+
+Returns true if browser supports WebGL 2, else false.
+
 ### `.key([key] [, ...keyN])`
 
-Sets one or more key colors, replacing any previously configured colors. Calling with no parameters clears all key colors.
+Sets one or more RGB key colors, **replacing any prior settings**. Calling without parameters clears all key colors.
 
 - `key`: any of the following:
 	- the string `'auto'`
@@ -42,9 +46,27 @@ Sets one or more key colors, replacing any previously configured colors. Calling
 		- `color` (required): the string `'auto'` or an array of color values like `[r, g, b]`
 		- `tolerance`: float ranged 0-1 (default=`0.3`)
 
-### `.render(clear)`
+Some examples:
 
-Updates frame from source element and paints to canvas.
+```js
+// detect background color per-frame (works best with solid backgrounds)
+chroma.key('auto')
+chroma.key({ color: 'auto', tolerance: 0.3 }) // equivalent to above
+
+// a screen that's green
+chroma.key([0, 255, 0])
+
+// screens that are green and very blue indeed
+chroma.key([0, 255, 0], [0, 255, 255])
+```
+
+### `.paint()`
+
+Re-paints current frame to canvas.
+
+### `.render()`
+
+Updates frame from source element and paints to target canvas. The following excerpt shows its use with a video element and a [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) loop to update the video frames:
 
 ```js
 let frameId
@@ -56,34 +78,23 @@ startChroma = () => {
 }
 stopChroma = () => cancelAnimationFrame(frameId)
 
+// link to <video> element
 video.addEventListener('play', startChroma)
 video.addEventListener('pause', stopChroma)
 video.addEventListener('ended', stopChroma)
 ```
 
-- clear: true/false whether to clear the canvas first
-
-### `.source(source)`
+### `.source(el)`
 
 Sets a new source video, image or canvas element to key.
 
-- source = canvas/img/video object
+- `el`: the new video/image/canvas element
 
+### `.target(canvas)`
 
-### `.target(target)`
+Sets a new target canvas on which to paint keyed image(s). The context `webgl2` will be used.
 
-Sets a new target canvas on which to paint keyed image(s).
-
-- target = canvas object
-
-
-### `.paint()`
-
-Re-paints current frame to canvas  
-
-### `.hasWebGL2()`
-
-Returns true if browser supports WebGL 2, else false.
+- `canvas`: the new [`HTMLCanvasElement`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas) element
 
 ## License
 
