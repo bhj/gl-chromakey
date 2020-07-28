@@ -68,14 +68,22 @@ function setUpShaders () {
   let keyFunctions = ''
 
   this._keys.forEach(k => {
-    const color = (k.color === 'auto') ? '-1,-1,-1' : `${k.color[0] / 255},${k.color[1] / 255},${k.color[2] / 255}`
-    const tolerance = isNaN(k.tolerance) ? 0.3 : k.tolerance
+    const color = (k.color === 'auto') ? 'auto()' : `vec3(${k.color[0] / 255},${k.color[1] / 255},${k.color[2] / 255})`
+    const tolerance = isNaN(k.tolerance) ? 0.3 : k.tolerance.toFixed(1)
 
-    keyFunctions += `pixel = distAlpha(vec3(${color}), ${tolerance.toFixed(1)}, pixel);\n`
+    keyFunctions += `pixel.a = distAlpha(${color}, ${tolerance});\n`
+    if (k.debug) keyFunctions += 'debug();\n'
   })
 
-  this._alphaShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderAlphaSrc.replace('%keys%', keyFunctions))
-  this._paintShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderPaintSrc)
+  if (this._alphaShader) this._alphaShader.unload()
+  if (this._paintShader) this._paintShader.unload()
+  if (this._alphaFramebuffer) this._alphaFramebuffer.unload()
+
+  this._alphaShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderAlphaSrc)
+  this._paintShader = new ShaderProgram(gl, vertexShaderSrc, fragmentShaderPaintSrc.replace('%keys%', keyFunctions))
+
+  // holds downsampled image for auto-keying
+  this._alphaFramebuffer = new FrameBuffer(gl, 16, 16)
 }
 
 function initializeTextures () {
@@ -102,14 +110,6 @@ function initializeTextures () {
   }
 
   this._mediaTexture = loadTexture(this._media)
-}
-
-function refreshVideoTexture (texture) {
-  const gl = this._gl
-
-  gl.bindTexture(gl.TEXTURE_2D, texture)
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image)
-  gl.bindTexture(gl.TEXTURE_2D, null)
 }
 
 function drawScreen (shader, sourceTexture, alphaTexture) {
@@ -151,7 +151,7 @@ function drawScreen (shader, sourceTexture, alphaTexture) {
 }
 
 function checkReady (callback) {
-  if (!this.initialized) {
+  if (!this._initialized) {
     return
   }
 
@@ -170,18 +170,6 @@ function checkReady (callback) {
   }
 }
 
-function setUpWebGl () {
-  const gl = this._gl
-
-  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-
-  // set up frame buffer
-  this.alphaFrameBuffer = new FrameBuffer(gl, gl.canvas.width, gl.canvas.height)
-
-  // set up shader programs
-  setUpShaders.apply(this)
-}
-
 class ChromaGL {
   constructor (source, target) {
     if (!this.hasWebGL2()) {
@@ -193,7 +181,7 @@ class ChromaGL {
     this.target(target)
 
     buildWebGlBuffers.apply(this)
-    this.initialized = true
+    this._initialized = true
 
     checkReady.call(this)
   }
@@ -232,7 +220,7 @@ class ChromaGL {
       throw new Error('Target must be an HTMLCanvasElement (or its WebGLRenderingContext)')
     }
 
-    setUpWebGl.apply(this)
+    setUpShaders.apply(this)
 
     return this
   }
@@ -242,7 +230,12 @@ class ChromaGL {
       return
     }
 
-    refreshVideoTexture.call(this, this._mediaTexture)
+    const gl = this._gl
+
+    // refresh source image
+    gl.bindTexture(gl.TEXTURE_2D, this._mediaTexture)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._mediaTexture.image)
+    gl.bindTexture(gl.TEXTURE_2D, null)
 
     this.paint()
   }
@@ -254,23 +247,16 @@ class ChromaGL {
 
     const gl = this._gl
 
-    // did target canvas change size since last paint?
-    if (gl.canvas.width !== this._targetWidth || gl.canvas.height !== this._targetHeight) {
-      this._targetWidth = gl.canvas.width
-      this._targetHeight = gl.canvas.height
-
-      gl.viewport(0, 0, this._targetWidth, this._targetHeight)
-      this.alphaFrameBuffer.setSize(this._targetWidth, this._targetHeight)
-    }
-
-    // draw alpha channels to frame buffer
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.alphaFrameBuffer.frameBuffer)
+    // downsample image to a 16x16 framebuffer used for auto-keying
+    gl.viewport(0, 0, 16, 16)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this._alphaFramebuffer.framebuffer)
     gl.clear(gl.COLOR_BUFFER_BIT)
     drawScreen.call(this, this._alphaShader, this._mediaTexture, null)
 
-    // draw to canvas
+    // draw final image to canvas
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    drawScreen.call(this, this._paintShader, this._mediaTexture, this.alphaFrameBuffer.texture)
+    drawScreen.call(this, this._paintShader, this._mediaTexture, this._alphaFramebuffer.texture)
 
     return this
   }
@@ -308,10 +294,11 @@ class ChromaGL {
   }
 
   unload () {
-    if (!this._gl || !this._alphaShader || !this._paintShader) return
+    if (!this._gl || !this._alphaShader || !this._paintShader || !this._alphaFramebuffer) return
 
     this._alphaShader.unload()
     this._paintShader.unload()
+    this._alphaFramebuffer.unload()
     this._gl.deleteBuffer(this._vertexPositionBuffer)
     this._gl.deleteBuffer(this._vertexIndexBuffer)
     this._gl.deleteBuffer(this._texCoordBuffer)

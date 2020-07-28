@@ -1,6 +1,6 @@
 {
   "name": "gl-chromakey",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.1",
   "description": "Chroma key a video/image/canvas element in real time using the GPU",
   "scripts": {
     "lint": "eslint .",
@@ -22,7 +22,6 @@
     "type": "git",
     "url": "git+https://github.com/bhj/gl-chromakey.git"
   },
-  "author": "Brandon H. Jones",
   "license": "ISC",
   "homepage": "https://github.com/bhj/gl-chromakey",
   "devDependencies": {
