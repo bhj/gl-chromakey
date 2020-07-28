@@ -1,10 +1,12 @@
 # gl-chromakey
 
-Chroma key a video/image/canvas element in real time using the GPU
+Chroma key a video/image/canvas element in real time using the GPU. Based on [work by Brian Chirls](https://github.com/brianchirls/ChromaGL).
 
-## Requirements
-
-Browser with [WebGL 2 support](https://caniuse.com/#feat=webgl2). The `hasWebGL2()` method is provided to test support.
+- Supports multiple key colors and adjustable tolerances
+- Supports automatic background color keying
+- Designed for [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) (when used with video)
+- Uses [WebGL 2](https://caniuse.com/#feat=webgl2) (`hasWebGL2()` is provided to test browser support)
+- No dependencies
 
 ## Installation
 
@@ -12,7 +14,7 @@ Browser with [WebGL 2 support](https://caniuse.com/#feat=webgl2). The `hasWebGL2
 $ npm i gl-chromakey
 ```
 
-## Usage
+## API
 
 ### `new GLChroma(source, target)`
 
@@ -29,15 +31,13 @@ const chroma = new GLChroma(video, canvas)
 
 ```
 
-## Methods
-
 ### `.hasWebGL2()`
 
 Returns true if browser supports WebGL 2, else false.
 
 ### `.key([key] [, ...keyN])`
 
-Sets one or more RGB key colors, **replacing any prior settings**. Calling without parameters clears all key colors.
+Sets one or more key colors in RGB, **replacing any prior settings**. Calling without parameters clears all key colors.
 
 - `key`: any of the following:
 	- the string `'auto'`
