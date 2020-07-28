@@ -2,10 +2,10 @@
 
 Chroma key a video/image/canvas element in real time using the GPU. Based on [work by Brian Chirls](https://github.com/brianchirls/ChromaGL).
 
-- Supports multiple key colors and adjustable tolerances
-- Supports automatic background color keying
+- Multiple key colors with adjustable tolerance
+- Automatic background color detection and keying
 - Designed for [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) (when used with video)
-- Uses [WebGL 2](https://caniuse.com/#feat=webgl2) (`hasWebGL2()` is provided to test browser support)
+- Uses [WebGL 2](https://caniuse.com/#feat=webgl2)
 - No dependencies
 
 ## Installation
@@ -33,7 +33,7 @@ const chroma = new GLChroma(video, canvas)
 
 ### `.hasWebGL2()`
 
-Returns true if browser supports WebGL 2, else false.
+Returns true if browser supports [WebGL 2](https://caniuse.com/#feat=webgl2), else false.
 
 ### `.key([key] [, ...keyN])`
 
@@ -46,7 +46,9 @@ Sets one or more key colors in RGB, **replacing any prior settings**. Calling wi
 		- `color` (required): the string `'auto'` or an array of color values like `[r, g, b]`
 		- `tolerance`: float ranged 0-1 (default=`0.3`)
 
-Some examples:
+The `auto` key color mode works by downsampling the source image, grabbing each "averaged" corner pixel, then keying on the average of the two pixels with the most similar color. It works best on video or images with simplistic backgrounds, and if the algorithm gets it wrong, may cause flickering in extreme cases.
+
+**Examples:**
 
 ```js
 // detect background color per-frame (works best with solid backgrounds)
