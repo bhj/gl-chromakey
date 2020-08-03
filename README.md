@@ -44,23 +44,21 @@ Sets one or more key colors in RGB, **replacing any prior settings**. Calling wi
 	- array of color values like `[r, g, b]` (keys a single color with default `tolerance`)
 	- array of objects with properties:
 		- `color` (required): the string `'auto'` or an array of color values like `[r, g, b]`
-		- `tolerance`: float ranged 0-1 (default=`0.3`)
+		- `tolerance`: float ranged 0-1; allowed distance from `color` (default=`0.3`)
 		- `amount`: float ranged 0-1; strength of alpha effect (default=`1.0`)
 
-The `auto` key color mode works by downsampling the source image, grabbing each "averaged" corner pixel, then keying on the average of the two pixels with the most similar color. It works best on video or images with simplistic backgrounds, and if the algorithm gets it wrong, may cause flickering in extreme cases.
+The `auto` key color mode works by downsampling the source image, grabbing each corner pixel, and keying on the two pixels with the most similar color. It works best on video or images with simplistic backgrounds, and if the algorithm gets it wrong, **can cause flickering in some cases**.
 
 **Examples:**
 
 ```js
-// detect background color per-frame (works best with solid backgrounds)
+// detect background color (per-frame, works best with solid-ish backgrounds)
 chroma.key('auto')
-chroma.key({ color: 'auto', tolerance: 0.3 }) // equivalent to above
+chroma.key({ color: 'auto', tolerance: 0.3 }) // equivalent
 
-// a screen that's green
+// a very greenscreen
 chroma.key([0, 255, 0])
-
-// screens that are green and very blue indeed
-chroma.key([0, 255, 0], [0, 255, 255])
+chroma.key({ color: [0, 255, 0], tolerance: 0.3 }) // equivalent
 ```
 
 ### `.paint()`
