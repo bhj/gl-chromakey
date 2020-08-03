@@ -69,9 +69,10 @@ function setUpShaders () {
 
   this._keys.forEach(k => {
     const color = (k.color === 'auto') ? 'auto()' : `vec3(${k.color[0] / 255},${k.color[1] / 255},${k.color[2] / 255})`
-    const tolerance = isNaN(k.tolerance) ? 0.3 : k.tolerance.toFixed(1)
+    const tolerance = isNaN(k.tolerance) ? 0.3 : k.tolerance.toFixed(3)
+    const amount = isNaN(k.amount) ? 1 : k.amount.toFixed(3)
 
-    keyFunctions += `pixel.a = distAlpha(${color}, ${tolerance});\n`
+    keyFunctions += `pixel.a = distAlpha(${color}, ${tolerance}, ${amount});\n`
     if (k.debug) keyFunctions += 'debug();\n'
   })
 

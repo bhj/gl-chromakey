@@ -45,6 +45,7 @@ Sets one or more key colors in RGB, **replacing any prior settings**. Calling wi
 	- array of objects with properties:
 		- `color` (required): the string `'auto'` or an array of color values like `[r, g, b]`
 		- `tolerance`: float ranged 0-1 (default=`0.3`)
+		- `amount`: float ranged 0-1; strength of alpha effect (default=`1.0`)
 
 The `auto` key color mode works by downsampling the source image, grabbing each "averaged" corner pixel, then keying on the average of the two pixels with the most similar color. It works best on video or images with simplistic backgrounds, and if the algorithm gets it wrong, may cause flickering in extreme cases.
 
