@@ -1,5 +1,11 @@
 export default class FrameBuffer {
-  constructor (gl, width, height, format = gl.UNSIGNED_BYTE) {
+  private gl: WebGLRenderingContext
+  private format: number
+  public framebuffer: WebGLFramebuffer | null
+  private renderbuffer: WebGLRenderbuffer | null
+  public texture: WebGLTexture | null
+
+  constructor (gl: WebGLRenderingContext, width: number, height: number, format: number = gl.UNSIGNED_BYTE) {
     this.gl = gl
     this.format = format
 
@@ -44,11 +50,11 @@ export default class FrameBuffer {
   }
 
   // @todo break this out more?
-  setSize (width, height) {
+  setSize (width: number, height: number): void {
     const gl = this.gl
     gl.bindTexture(gl.TEXTURE_2D, this.texture)
 
-    let tex
+    let tex: Float32Array | Uint16Array | Uint8Array
     try {
       if (this.format === gl.FLOAT) {
         tex = new Float32Array(width * height * 4)
@@ -56,7 +62,7 @@ export default class FrameBuffer {
       } else {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, this.format, null)
       }
-    } catch (e) {
+    } catch {
       // Null rejected
       if (this.format === gl.UNSIGNED_SHORT_4_4_4_4) {
         tex = new Uint16Array(width * height * 4)
@@ -74,7 +80,7 @@ export default class FrameBuffer {
     gl.bindRenderbuffer(gl.RENDERBUFFER, null) // cleanup
   }
 
-  unload () {
+  unload (): void {
     this.gl.deleteFramebuffer(this.framebuffer)
     this.gl.deleteRenderbuffer(this.renderbuffer)
     this.gl.deleteTexture(this.texture)

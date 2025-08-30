@@ -1,11 +1,24 @@
 {
   "name": "gl-chromakey",
-  "version": "1.0.0-beta.2",
+  "version": "0.0.0-dev.0",
   "description": "Chroma key a video/image/canvas element in real time using the GPU",
+  "license": "MIT",
+  "type": "module",
+  "exports": "./dist/gl-chromakey.js",
+  "files": [
+    "dist/*",
+    "CHANGELOG.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhj/gl-chromakey.git"
+  },
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "tsc && vite build"
   },
   "keywords": [
     "chroma",
@@ -18,18 +31,13 @@
     "canvas",
     "webgl"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/bhj/gl-chromakey.git"
-  },
-  "license": "ISC",
-  "homepage": "https://github.com/bhj/gl-chromakey",
   "devDependencies": {
-    "eslint": "^7.6.0",
-    "eslint-config-standard": "^14.1.1",
-    "eslint-plugin-import": "^2.22.0",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-standard": "^4.0.1"
+    "@microsoft/api-extractor": "^7.52.11",
+    "@stylistic/eslint-plugin": "^5.2.3",
+    "eslint": "^9.34.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.41.0",
+    "unplugin-dts": "^1.0.0-beta.6",
+    "vite": "^7.1.3"
   }
 }
