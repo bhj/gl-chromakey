@@ -76,17 +76,17 @@ chroma.key({
 
 ### `.render(options?: RenderOptions): GLChromaKey`
 
-Updates frame from source element and paints to target canvas. The following excerpt shows its use with a video element and a [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) loop:
+Processes the source element's current frame and paints to the target canvas. The following excerpt shows usage with a video element and a [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) loop:
 
 ```js
 let frameId
 
 // methods for render loop
-startChroma = () => {
+const startChroma = () => {
   frameId = requestAnimationFrame(startChroma)
   chroma.render()
 }
-stopChroma = () => cancelAnimationFrame(frameId)
+const stopChroma = () => cancelAnimationFrame(frameId)
 
 // follow <video> element events
 video.addEventListener('play', startChroma)
@@ -110,11 +110,11 @@ Sets a new target canvas on which to paint keyed image(s). The context `webgl2` 
 
 ### `.getContentBounds(): [x1: number, y1: number, x2: number, y2: number]`
 
-Meant to be called after `render()`, returns the coordinates of a bounding box around non-transparent pixels in the form [x1, y1, x2, y2]
+Returns the coordinates of a bounding box around the non-transparent pixels in the target canvas. Meant to be called immediately after `render()`.
 
 ### `.supportsWebGL2(): boolean`
 
-Whether the browser [supports WebGL 2](https://caniuse.com/#feat=webgl2).
+Returns whether the browser [supports WebGL 2](https://caniuse.com/#feat=webgl2).
 
 ## Demo & Development
 
