@@ -33,12 +33,12 @@ const chroma = new GLChroma(video, canvas)
 
 ### `.key(...keys: Key[]): GLChromaKey`
 
-Sets one or more key colors in RGB, **replacing any prior settings**. Calling without parameters clears all key colors.
+Sets one or more key colors, **replacing any prior settings**. Calling without parameters clears all keys.
 
 - `key`: any of the following:
 	- the string `'auto'`
-	- RGB color in the form `[r, g, b]`
-	- array of objects with properties:
+	- an RGB color in array form `[r, g, b]`
+	- an object with properties:
 		- `color` (required): the string `'auto'` or an RGB color in the form `[r, g, b]`
 		- `tolerance`: Color tolerance; float ranged 0-1. Higher values result in a larger range of colors being keyed (default=`0.1`)
 		- `smoothness`: Edge smoothness; float ranged 0-1. Higher values result in more transparency near the key color (default=`0.1`)
@@ -76,7 +76,12 @@ chroma.key({
 
 ### `.render(options?: RenderOptions): GLChromaKey`
 
-Processes the source element's current frame and paints to the target canvas. The following excerpt shows usage with a video element and a [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) loop:
+Processes the source element's current frame and paints to the target canvas. 
+
+ - `options`: optional object with render settings:
+   - `passthrough`: Boolean to skip chroma key processing and draw the source frame verbatim (default=`false`)
+
+The following excerpt shows usage with a video element and a [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) loop:
 
 ```js
 let frameId
